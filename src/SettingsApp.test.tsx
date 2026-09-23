@@ -43,6 +43,16 @@ describe("single-source Ready Room", () => {
     expect(open).toHaveBeenCalledOnce();
   });
 
+  it("makes choosing an app the single primary setup action", () => {
+    const snapshot = snapshotFixture();
+    const open = vi.fn();
+    render(<ReadyRoom settings={{ ...snapshot.settings, listeningSource: undefined }} runtime={{ ...snapshot.runtime, listening: false }} history={[]} previewMode={false} onToggleListening={vi.fn()} onOpenSourcePicker={open} webRuntime={false} />);
+    expect(screen.getByRole("heading", { name: "เลือกแอปแล้วเริ่มแปล" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /เริ่มฟัง · F8/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "เลือกแอปที่จะฟัง" }));
+    expect(open).toHaveBeenCalledOnce();
+  });
+
   it("displays the selected application dynamically even before listening starts", () => {
     const snapshot = snapshotFixture();
     const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: false }, history: [], previewMode: false, onToggleListening: vi.fn(), onOpenSourcePicker: vi.fn(), webRuntime: false };
@@ -53,7 +63,7 @@ describe("single-source Ready Room", () => {
       expect(screen.queryByText("Mistfall Hunter", { exact: true })).not.toBeInTheDocument();
     }
     view.rerender(<ReadyRoom {...props} settings={{ ...snapshot.settings, listeningSource: undefined }} />);
-    expect(screen.getAllByText("ยังไม่ได้เลือกแอป")).toHaveLength(2);
+    expect(screen.getAllByText("ยังไม่ได้เลือกแอป")).toHaveLength(1);
     expect(screen.queryByText("My Custom App", { exact: true })).not.toBeInTheDocument();
   });
 
@@ -63,7 +73,7 @@ describe("single-source Ready Room", () => {
     const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: false }, history: [], previewMode: false, onToggleListening: toggle, onOpenSourcePicker: vi.fn(), webRuntime: false };
     const view = render(<ReadyRoom {...props} />);
     const start = screen.getByRole("button", { name: /เริ่มฟัง · F8/ });
-    const title = screen.getByRole("heading", { name: "การฟังปัจจุบัน" });
+    const title = screen.getByRole("heading", { name: "พร้อมเริ่มแปล" });
     expect(title.compareDocumentPosition(start) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(start);
     expect(toggle).toHaveBeenCalledOnce();

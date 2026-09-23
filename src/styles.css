@@ -341,10 +341,9 @@ button svg, a svg { width: 17px; height: 17px; stroke-width: 1.8; }
   width: 100%;
   height: 100%;
   border: 1px solid rgba(255, 255, 255, .1);
-  background: rgba(28, 29, 36, var(--overlay-opacity));
-  box-shadow: 0 18px 48px rgba(0, 0, 0, .32);
-  backdrop-filter: blur(18px);
-  font-size: calc(14px * var(--overlay-scale));
+  background: rgba(30, 34, 43, var(--overlay-opacity));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .26);
+  font-size: calc(16px * var(--overlay-scale));
 }
 
 .overlay-capsule {
@@ -361,12 +360,12 @@ button svg, a svg { width: 17px; height: 17px; stroke-width: 1.8; }
   flex-direction: column;
   padding: 8px 10px 10px;
   overflow: hidden;
-  border-radius: 22px;
+  border-radius: 16px;
   animation: overlay-enter 190ms cubic-bezier(.2, .8, .2, 1) both;
 }
 .overlay-card.is-editing {
-  border-color: rgba(112, 217, 155, .65);
-  box-shadow: 0 0 0 3px rgba(112, 217, 155, .1), 0 18px 48px rgba(0, 0, 0, .32);
+  border-color: rgba(104, 213, 220, .7);
+  box-shadow: 0 0 0 3px rgba(104, 213, 220, .12), 0 18px 48px rgba(0, 0, 0, .32);
 }
 
 .overlay-signal {
@@ -380,8 +379,7 @@ button svg, a svg { width: 17px; height: 17px; stroke-width: 1.8; }
   background: rgba(255, 255, 255, .055);
 }
 .overlay-signal svg { width: 16px; height: 16px; }
-.overlay-signal.is-active { color: #78d8a0; background: rgba(99, 196, 139, .13); }
-.overlay-signal.is-active svg { animation: signal-pulse 1.7s ease-in-out infinite; }
+.overlay-signal.is-active { color: #80dce2; background: rgba(104, 213, 220, .15); }
 .overlay-signal.is-warning { color: #e8c47c; background: rgba(224, 176, 78, .1); }
 
 .overlay-dot {
@@ -392,7 +390,7 @@ button svg, a svg { width: 17px; height: 17px; stroke-width: 1.8; }
   border-radius: 50%;
   background: #656873;
 }
-.overlay-dot.is-active { background: #70d99b; box-shadow: 0 0 0 3px rgba(112, 217, 155, .12); }
+.overlay-dot.is-active { background: #80dce2; box-shadow: 0 0 0 3px rgba(104, 213, 220, .13); }
 .overlay-dot.is-warning { background: #e6be70; box-shadow: 0 0 0 3px rgba(230, 190, 112, .1); }
 
 .overlay-key {
@@ -403,9 +401,9 @@ button svg, a svg { width: 17px; height: 17px; stroke-width: 1.8; }
   gap: 5px;
   padding: 4px 8px;
   border-radius: 999px;
-  color: #a7a9b3;
+  color: #d5e0e1;
   background: rgba(255, 255, 255, .055);
-  font: 700 8px var(--font-mono);
+  font: 700 10px var(--font-mono);
   letter-spacing: .02em;
 }
 .overlay-key svg { width: 11px; height: 11px; }
@@ -413,12 +411,12 @@ button svg, a svg { width: 17px; height: 17px; stroke-width: 1.8; }
 .overlay-titlebar { flex-shrink: 0; user-select: none; }
 .overlay-titlebar.is-draggable { cursor: grab; }
 .overlay-titlebar.is-draggable:active { cursor: grabbing; }
-.overlay-settings-button { display: flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 3px; min-width: 30px; min-height: 30px; padding: 5px; border: 1px solid rgba(112,217,155,.25); border-radius: 10px; color: #8de3ac; background: rgba(112,217,155,.08); cursor: pointer; }
+.overlay-settings-button { display: flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 3px; min-width: 30px; min-height: 30px; padding: 5px; border: 1px solid rgba(104,213,220,.28); border-radius: 9px; color: #96e2e6; background: rgba(104,213,220,.09); cursor: pointer; }
 .overlay-settings-button svg { width: 15px; height: 15px; }
 .overlay-settings-button small { font-size: 9px; }
 .overlay-settings-button:disabled { opacity: .55; cursor: default; }
-.overlay-settings-button:not(:disabled):hover { background: rgba(112,217,155,.18); }
-.overlay-settings-button:focus-visible { outline: 2px solid #8de3ac; outline-offset: 2px; }
+.overlay-settings-button:not(:disabled):hover { background: rgba(104,213,220,.18); }
+.overlay-settings-button:focus-visible { outline: 2px solid #8be2e7; outline-offset: 2px; }
 
 .overlay-drag {
   display: inline-flex;
@@ -426,11 +424,11 @@ button svg, a svg { width: 17px; height: 17px; stroke-width: 1.8; }
   align-items: center;
   gap: 6px;
   padding: 3px 9px;
-  border: 1px dashed rgba(112, 217, 155, .45);
+  border: 1px dashed rgba(104, 213, 220, .45);
   border-radius: 999px;
-  color: #83dda6;
-  background: rgba(99, 196, 139, .09);
-  font-size: 8px;
+  color: #9ce7e9;
+  background: rgba(104, 213, 220, .09);
+  font-size: 10px;
   font-weight: 700;
   cursor: move;
 }
@@ -451,7 +449,7 @@ button svg, a svg { width: 17px; height: 17px; stroke-width: 1.8; }
   display: block;
   overflow: hidden;
   color: #f5f6f8;
-  font-size: .9em;
+  font-size: 1em;
   font-weight: 650;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -461,15 +459,15 @@ button svg, a svg { width: 17px; height: 17px; stroke-width: 1.8; }
   display: block;
   overflow: hidden;
   color: #9295a1;
-  font-size: .66em;
+  font-size: .78em;
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.overlay-bubble.is-incoming { align-self: flex-start; background: #25272f; }
-.overlay-bubble.is-outgoing { align-self: flex-end; padding-right: 52px; background: #63c48b; }
-.overlay-bubble.is-outgoing strong { color: #102118; }
-.overlay-bubble.is-outgoing > span { color: rgba(16, 33, 24, .68); }
+.overlay-bubble.is-incoming { align-self: flex-start; background: #303640; }
+.overlay-bubble.is-outgoing { align-self: flex-end; padding-right: 52px; background: #f2ba77; }
+.overlay-bubble.is-outgoing strong { color: #2d241d; }
+.overlay-bubble.is-outgoing > span { color: rgba(45, 36, 29, .76); }
 .overlay-source-badge {
   width: 100%;
   max-width: 100%;
@@ -478,8 +476,8 @@ button svg, a svg { width: 17px; height: 17px; stroke-width: 1.8; }
   text-overflow: ellipsis;
   white-space: nowrap;
   border-radius: 999px;
-  color: #79dba1;
-  font: 750 .48em var(--font-mono);
+  color: #9be2e6;
+  font: 750 .61em var(--font-mono);
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -492,8 +490,8 @@ button svg, a svg { width: 17px; height: 17px; stroke-width: 1.8; }
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  color: rgba(16, 33, 24, .72);
-  font: 750 .54em var(--font-sans);
+  color: rgba(45, 36, 29, .78);
+  font: 750 .65em var(--font-sans);
 }
 .overlay-copy { padding: 2px 4px; border: 0; border-radius: 5px; background: rgba(255, 255, 255, .25); }
 .overlay-copy svg { width: 10px; height: 10px; }
@@ -502,7 +500,7 @@ button svg, a svg { width: 17px; height: 17px; stroke-width: 1.8; }
   display: grid;
   gap: 3px;
   padding: 6px 10px;
-  border-left: 2px solid rgba(112, 217, 155, .7);
+  border-left: 2px solid rgba(104, 213, 220, .7);
   color: #d8dae0;
   animation: bubble-enter 150ms ease-out both;
 }
@@ -510,10 +508,10 @@ button svg, a svg { width: 17px; height: 17px; stroke-width: 1.8; }
   display: flex;
   align-items: center;
   gap: 5px;
-  color: #78d8a0;
-  font: 750 .55em var(--font-mono);
+  color: #8fe0e5;
+  font: 750 .66em var(--font-mono);
 }
-.overlay-live span i { width: 5px; height: 5px; border-radius: 50%; background: #70d99b; animation: signal-pulse 1.2s ease-in-out infinite; }
+.overlay-live span i { width: 5px; height: 5px; border-radius: 50%; background: #8fe0e5; }
 .overlay-live strong { overflow: hidden; font-size: .82em; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 
 .overlay-listening,
@@ -527,14 +525,14 @@ button svg, a svg { width: 17px; height: 17px; stroke-width: 1.8; }
   text-align: center;
 }
 .overlay-listening svg,
-.overlay-empty svg { width: 22px; height: 22px; margin-bottom: 5px; color: #70d99b; }
+.overlay-empty svg { width: 22px; height: 22px; margin-bottom: 5px; color: #80dce2; }
 .overlay-listening strong,
 .overlay-empty strong { color: #d9dbe1; font-size: .82em; }
 .overlay-listening span,
 .overlay-empty span { font-size: .62em; }
 
 @keyframes capsule-enter { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: scale(1); } }
-@keyframes overlay-enter { from { opacity: 0; transform: translateY(5px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes overlay-enter { from { opacity: 1; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes bubble-enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes signal-pulse { 0%, 100% { opacity: .45; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.08); } }
 

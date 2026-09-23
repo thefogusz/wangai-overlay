@@ -1,10 +1,12 @@
-# WANGAI desktop UI: dark utility
+# WANGAI desktop UI: game companion
 
 ## Job and structure
 
 WANGAI should let a player choose one app, check whether audio and translation are ready, then start or stop listening. The main window uses a left navigation rail, a compact toolbar, and a work area. The active session and F8 action are visible first. History, diagnostics, and detailed tuning stay one click away.
 
-The dark theme is the default. Surfaces are charcoal and muted forest green, with restrained green for selected navigation, ready state, and the primary action. Status also uses words and icons, so colour is not the only signal. The retro W key remains the brand mark; the layout follows desktop tools rather than a promotional page.
+The dark theme is the default. Charcoal and blue slate carry the workspace, warm cream makes Thai copy legible, cyan identifies a live connection, and amber highlights the selected app and the primary action. Status uses words and icons as well as colour. The retro W key and warm accent borrow the character of the Mat reference; dense navigation and compact status rows follow desktop tools.
+
+The earlier gray-green version gave all surfaces, statuses, and actions similar weight. In the revised hierarchy the selected app and session control form one command strip, source and AI readiness sit below it, and recent speech is a single compact list. Setup offers one prominent Choose App action. Error states say “ต้องตรวจสอบ” in the summary and sidebar.
 
 ## Screens
 
@@ -28,14 +30,15 @@ Bundle Noto Sans Thai for UI copy and Kanit Bold for main headings and brand. We
 - [OBS Studio quick start](https://obsproject.com/kb/quick-start-guide): observed workspace with sources, meters, controls and secondary settings. WANGAI maps this to source, readiness and session control.
 - [Microsoft NavigationView](https://learn.microsoft.com/en-us/windows/apps/design/controls/navigationview) and [app settings guidance](https://learn.microsoft.com/en-us/windows/apps/design/app-settings/guidelines-for-app-settings): persistent navigation and predictable settings.
 - [Apple toolbar guidance](https://developer.apple.com/design/human-interface-guidelines/toolbars): title and current-view actions in a compact toolbar.
-- [Mat reference](https://onepagelove.com/mat): retained only the restrained retro mood in the W key and natural accent. Its page composition is not the app layout.
+- [SteelSeries GG app guide](https://support.steelseries.com/hc/en-us/articles/25015904433677-Getting-to-know-the-GG-app) and [GameReady in GG](https://steelseries.com/gg/home/headsets): observed dark slate workspace, vivid selected states, and core controls before deeper settings. WANGAI interprets this with cyan live status and a prominent session control.
+- [Mat reference](https://onepagelove.com/mat): observed cream, deep green, large expressive type, and retro objects. WANGAI uses the warm contrast and keyboard identity, without copying its web page structure.
 
 These are design references, not claims that WANGAI duplicates their features or native frameworks.
 
 ## Skills used
 
-The local `ui-ux-pro-max` skill informs typography, contrast, target size and navigation review. `frontend-skill` and `frontend-ui-engineering` guide the utility workspace implementation. `browser-testing-with-devtools` guides real viewport checks. `performance-optimization` keeps the font and UI cost visible. `code-review-and-quality` guides the final pass.
+The local `ui-ux-pro-max` skill informs typography, contrast, target size and navigation review. `frontend-ui-engineering` guides the utility workspace implementation. `browser-testing-with-devtools` guides real viewport checks. `performance-optimization` keeps the font and UI cost visible. The Overlay uses no blur or repeating decorative animation during live play.
 
 ## Verification boundary
 
-Browser Preview checks routes and layout using simulated runtime state. Production build and portable Windows compilation check packaging. Native DPI, installed app flow, screen reader behavior and real capture still need hands-on release QA.
+Browser Preview checks routes and layout using simulated runtime state. Production build, automated UI tests, and portable Windows compilation check packaging. Native DPI, installed app flow, screen reader behavior and real capture still need hands-on release QA.

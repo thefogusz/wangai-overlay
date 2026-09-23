@@ -11,12 +11,12 @@ unsafe fn SendMessageW(hwnd:HWND,msg:u32,wparam:WPARAM,lparam:LPARAM)->LRESULT {
 }
 
 // COLORREF stores colors as 0x00bbggrr.
-const BG:COLORREF=COLORREF(0x0023231c);
-const INK:COLORREF=COLORREF(0x00ecefe9);
-const MUTED:COLORREF=COLORREF(0x00adb1a5);
-const FOREST:COLORREF=COLORREF(0x009ec79c);
-const BORDER:COLORREF=COLORREF(0x003e4034);
-const FIELD:COLORREF=COLORREF(0x002f3027);
+const BG:COLORREF=COLORREF(0x00221b18);
+const INK:COLORREF=COLORREF(0x00ebf3f7);
+const MUTED:COLORREF=COLORREF(0x00c5c2b9);
+const FOREST:COLORREF=COLORREF(0x006eb6f5);
+const BORDER:COLORREF=COLORREF(0x004d423b);
+const FIELD:COLORREF=COLORREF(0x003a302b);
 struct View {
     task:Task,root:PathBuf,children:Vec<HWND>,font:HFONT,heading:HFONT,brush:HBRUSH,field_brush:HBRUSH,
     font_resources:Vec<HANDLE>,noto_loaded:bool,kanit_loaded:bool,

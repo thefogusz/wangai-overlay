@@ -38,7 +38,7 @@ describe("settings with nullable desktop audio diagnostics", () => {
     render(<App />);
     expect(screen.getByRole("meter", { name: "ระดับเสียงขาเข้า" })).toHaveAttribute("aria-valuenow", "0");
     expect(screen.getByText("รอเสียงจากแอป")).toBeInTheDocument();
-    const link = screen.getByRole("link", { name: "การตั้งค่าขั้นสูง" });
+    const link = screen.getByRole("link", { name: "เสียงและแอป" });
     fireEvent.click(link);
     await act(async () => {
       window.location.hash = link.getAttribute("href")!;
@@ -67,7 +67,8 @@ describe("settings with nullable desktop audio diagnostics", () => {
     const view = render(<SettingsApp activeTab="overview" />);
     expect(await screen.findByRole("alert")).toHaveTextContent(message);
     expect(screen.getByText("ตัวตรวจคำพูดยังไม่พร้อม")).toBeInTheDocument();
-    expect(screen.getByText("ต้องตั้งค่า")).toBeInTheDocument();
+    expect(screen.getAllByText("ต้องตรวจสอบ")).toHaveLength(2);
+    expect(document.querySelector(".settings-sidebar-dot")).toHaveClass("is-warning");
     view.rerender(<SettingsApp activeTab="advanced" advancedSection="audio" />);
     expect(screen.getByRole("alert")).toHaveTextContent(message);
     Object.assign(snapshot.runtime, { workerReady: true, lastError: undefined });

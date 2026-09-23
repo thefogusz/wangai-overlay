@@ -101,8 +101,8 @@ export function OverlayApp() {
           {warning ? <TriangleAlert /> : listening ? <Radio /> : <Headphones />}
         </span>
         <div className="min-w-0 flex-1">
-          <strong className="block truncate text-[12px] font-bold text-[#f2f3f6]">{warning ? "WANGAI ต้องการตรวจสอบ" : setupNeeded ? "ตั้งค่า WANGAI เพื่อเริ่มฟัง" : listening ? "กำลังฟังเสียงขาเข้า" : "WANGAI พร้อมแล้ว"}</strong>
-          <span className="block truncate text-[9px] text-[#858894]">{settingsError ?? (warning ? runtime.lastError ?? status : setupNeeded ? "กดเฟืองเพื่อเลือกแอปและตั้งค่าการแปล" : status)}</span>
+          <strong className="block truncate text-[13px] font-bold text-[#f8f5ef]">{warning ? "WANGAI ต้องการตรวจสอบ" : setupNeeded ? "ตั้งค่า WANGAI เพื่อเริ่มฟัง" : listening ? "กำลังฟังเสียงขาเข้า" : "WANGAI พร้อมแล้ว"}</strong>
+          <span className="block truncate text-[11px] text-[#bbc8cb]">{settingsError ?? (warning ? runtime.lastError ?? status : setupNeeded ? "กดเฟืองเพื่อเลือกแอปและตั้งค่าการแปล" : status)}</span>
         </div>
         <span className="overlay-key"><Mic />{settings.hotkeys.pushToTalk}</span>
         {settingsButton(true)}
@@ -122,7 +122,7 @@ export function OverlayApp() {
       >
         <div className="flex min-w-0 items-center gap-2">
           <span className={`overlay-dot ${warning ? "is-warning" : listening || runtime.microphoneActive ? "is-active" : ""}`} />
-          <span className="truncate text-[9px] font-bold tracking-[0.08em] text-[#858894]">{status}</span>
+          <span className="truncate text-[11px] font-bold text-[#c6d3d6]">{status}</span>
         </div>
         <div className="overlay-header-actions">{runtime.overlayEditMode ? (
           <button aria-label="ลากเพื่อย้าย Overlay" className="overlay-drag" onMouseDown={startDrag}><GripHorizontal />ลาก · {settings.hotkeys.editOverlay} เพื่อล็อก</button>
