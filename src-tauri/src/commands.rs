@@ -203,6 +203,9 @@ pub fn open_settings_window(app: AppHandle) -> CommandResult<()> {
 }
 
 pub fn show_listening_overlay(app: &AppHandle) -> CommandResult<()> {
+    // Let the user place the overlay as soon as a session opens. Once placement
+    // is finished, edit mode can be turned off to restore click-through input.
+    hotkeys::set_overlay_edit_mode(app, true).map_err(|error| error.to_string())?;
     let overlay = app
         .get_webview_window("overlay")
         .context("ไม่พบ Overlay")

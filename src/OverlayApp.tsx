@@ -80,6 +80,12 @@ export function OverlayApp() {
     catch { setSettingsError("เปิดหน้าตั้งค่าไม่สำเร็จ กรุณาลองอีกครั้ง"); }
   };
 
+  const finishPlacement = async () => {
+    setSettingsError(undefined);
+    try { await api.setOverlayEditMode(false); }
+    catch { setSettingsError("บันทึกตำแหน่ง Overlay ไม่สำเร็จ กรุณาลองอีกครั้ง"); }
+  };
+
   const startDrag = (event: MouseEvent<HTMLElement>) => {
     if (event.button !== 0 || !runtime.overlayEditMode || isPreviewMode()) return;
     event.preventDefault();
@@ -114,7 +120,7 @@ export function OverlayApp() {
     <main className={`overlay-card ${runtime.overlayEditMode ? "is-editing" : ""}`} style={style}>
       <header
         className={`overlay-titlebar flex min-h-8 items-center justify-between gap-3 px-1 ${runtime.overlayEditMode ? "is-draggable" : ""}`}
-        title={runtime.overlayEditMode ? `ลากแถบนี้เพื่อย้าย · กด ${settings.hotkeys.editOverlay} เพื่อล็อกตำแหน่ง` : `กด ${settings.hotkeys.editOverlay} เพื่อย้ายหน้าต่าง`}
+        title={runtime.overlayEditMode ? "ลากแถบนี้เพื่อย้าย Overlay" : `กด ${settings.hotkeys.editOverlay} เพื่อปรับตำแหน่งอีกครั้ง`}
         onMouseDown={(event) => {
           if ((event.target as Element).closest("button, a, input, select")) return;
           startDrag(event);
@@ -124,10 +130,12 @@ export function OverlayApp() {
           <span className={`overlay-dot ${warning ? "is-warning" : listening || runtime.microphoneActive ? "is-active" : ""}`} />
           <span className="truncate text-[11px] font-bold text-[#c6d3d6]">{status}</span>
         </div>
-        <div className="overlay-header-actions">{runtime.overlayEditMode ? (
-          <button aria-label="ลากเพื่อย้าย Overlay" className="overlay-drag" onMouseDown={startDrag}><GripHorizontal />ลาก · {settings.hotkeys.editOverlay} เพื่อล็อก</button>
+        <div className="overlay-header-actions">{runtime.overlayEditMode ? (<>
+          <span className="overlay-key"><GripHorizontal />ลากแถบเพื่อย้าย</span>
+          <button className="overlay-drag" onClick={() => void finishPlacement()}>วางตรงนี้</button>
+        </>
         ) : (
-          <span className="overlay-key"><GripHorizontal />{settings.hotkeys.editOverlay} เพื่อย้าย · <Mic />{settings.hotkeys.pushToTalk}</span>
+          <span className="overlay-key"><GripHorizontal />{settings.hotkeys.editOverlay} ปรับตำแหน่ง · <Mic />{settings.hotkeys.pushToTalk}</span>
         )}{settingsButton(runtime.overlayEditMode)}</div>
       </header>
       {settingsError && <p role="alert" className="text-xs text-red-200">{settingsError}</p>}
@@ -168,7 +176,7 @@ export function OverlayApp() {
         )}
 
         {visible.length === 0 && !partial && runtime.overlayEditMode && (
-          <div className="overlay-empty"><GripHorizontal /><strong>วาง Overlay ตรงตำแหน่งที่ต้องการ</strong><span>ลากจากแถบด้านบน แล้วกด F7 เพื่อล็อก</span></div>
+          <div className="overlay-empty"><GripHorizontal /><strong>วาง Overlay ตรงตำแหน่งที่ต้องการ</strong><span>ลากจากแถบด้านบน แล้วกดวางตรงนี้</span></div>
         )}
       </section>
     </main>

@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   copyLatestReply: vi.fn(async () => true),
   openSettingsWindow: vi.fn(async () => undefined),
   startOverlayDrag: vi.fn(async () => undefined),
+  setOverlayEditMode: vi.fn(async () => true),
 }));
 
 vi.mock("./useSnapshot", () => ({
@@ -21,6 +22,7 @@ vi.mock("./api", () => ({
     copyLatestReply: mocks.copyLatestReply,
     openSettingsWindow: mocks.openSettingsWindow,
     startOverlayDrag: mocks.startOverlayDrag,
+    setOverlayEditMode: mocks.setOverlayEditMode,
   },
 }));
 
@@ -36,6 +38,7 @@ describe("WANGAI overlay", () => {
     mocks.setOverlayPresentation.mockClear();
     mocks.openSettingsWindow.mockReset();
     mocks.startOverlayDrag.mockReset();
+    mocks.setOverlayEditMode.mockClear();
   });
 
   afterEach(() => {
@@ -141,7 +144,7 @@ describe("WANGAI overlay", () => {
     expect(mocks.openSettingsWindow).toHaveBeenCalledOnce();
   });
 
-  it("drags the expanded titlebar only after unlocking, excluding controls and right clicks", () => {
+  it("drags the expanded titlebar in placement mode, excluding controls and right clicks", () => {
     const view = render(<OverlayApp />);
     const header = view.container.querySelector("header")!;
     fireEvent.mouseDown(header, { button: 0 });
@@ -153,14 +156,21 @@ describe("WANGAI overlay", () => {
     expect(mocks.startOverlayDrag).not.toHaveBeenCalled();
     fireEvent.mouseDown(header.querySelector("span")!, { button: 0 });
     expect(mocks.startOverlayDrag).toHaveBeenCalledTimes(1);
-    fireEvent.mouseDown(screen.getByRole("button", { name: "ลากเพื่อย้าย Overlay" }), { button: 0 });
-    expect(mocks.startOverlayDrag).toHaveBeenCalledTimes(2);
+    fireEvent.mouseDown(screen.getByRole("button", { name: "วางตรงนี้" }), { button: 0 });
+    expect(mocks.startOverlayDrag).toHaveBeenCalledTimes(1);
+  });
+
+  it("finishes placement with one visible button", async () => {
+    mocks.snapshot = { ...mocks.snapshot!, runtime: { ...mocks.snapshot!.runtime, overlayEditMode: true } };
+    render(<OverlayApp />);
+    fireEvent.click(screen.getByRole("button", { name: "วางตรงนี้" }));
+    await waitFor(() => expect(mocks.setOverlayEditMode).toHaveBeenCalledWith(false));
   });
 
   it("uses the configured movement shortcut in the visible hint", () => {
     mocks.snapshot!.settings.hotkeys.editOverlay = "F6";
     const view = render(<OverlayApp />);
-    expect(screen.getByText(/F6 เพื่อย้าย/)).toBeInTheDocument();
-    expect(view.container.querySelector("header")).toHaveAttribute("title", "กด F6 เพื่อย้ายหน้าต่าง");
+    expect(screen.getByText(/F6 ปรับตำแหน่ง/)).toBeInTheDocument();
+    expect(view.container.querySelector("header")).toHaveAttribute("title", "กด F6 เพื่อปรับตำแหน่งอีกครั้ง");
   });
 });
