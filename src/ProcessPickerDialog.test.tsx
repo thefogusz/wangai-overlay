@@ -53,6 +53,16 @@ describe("grouped running app picker", () => {
     expect(screen.getByText(/เลือกอยู่ · เลือกแอปนี้/)).toBeInTheDocument();
   });
 
+  it("shows clear only for a saved source and runs it from the picker", async () => {
+    const p = { ...props(), onClear: vi.fn().mockResolvedValue(undefined) };
+    const view = render(<ProcessPickerDialog {...p} />);
+    expect(screen.queryByRole("button", { name: "ล้างการเลือก" })).not.toBeInTheDocument();
+    const selected = { executablePath: p.apps[0].executablePath, executableName: p.apps[0].executableName, displayName: "Discord", lastPid: 7210 };
+    view.rerender(<ProcessPickerDialog {...p} selected={selected} />);
+    fireEvent.click(screen.getByRole("button", { name: "ล้างการเลือก" }));
+    await waitFor(() => expect(p.onClear).toHaveBeenCalledOnce());
+  });
+
   it("returns to the top when changing or clearing a search in a long list", () => {
     const p = props();
     p.apps = [previewRunningApps[0], ...Array.from({ length: 50 }, (_, i) => ({

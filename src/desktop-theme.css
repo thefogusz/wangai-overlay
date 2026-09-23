@@ -51,14 +51,15 @@
 .settings-input:focus { border-color: #8bd9df; }
 .settings-card { border: 1px solid var(--line); border-radius: 11px; background: var(--surface); }
 .settings-card h2 { color: #fff7e9; font-size: 1.15rem; }
-.settings-card header p, .settings-info small { color: #bbc4c8; font-size: .78rem; }
+.settings-card header p { color: #bbc4c8; font-size: .78rem; }
 .settings-card-icon { color: #79d9e0; background: #30434d; }
-.settings-info, .settings-source-choice { border: 1px solid #444d58; border-radius: 9px; background: #2a3039; }
-.settings-info p, .settings-source-choice strong { color: #fff8ed; }
-.settings-source-choice { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 13px 15px; }
-.settings-source-choice > div:first-child { display: grid; gap: 3px; }
-.settings-source-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
-.settings-source-choice small { color: #bbc8ca; font-size: .77rem; }
+.settings-audio-help { display: grid; gap: 12px; padding: 16px; color: #cbd2d2; font-size: .82rem; line-height: 1.55; }
+.settings-audio-help-status { margin: 0; }
+.settings-audio-help-status strong { color: #f5f2ea; }
+.settings-audio-help ol { display: grid; gap: 6px; margin: 0; padding-left: 20px; }
+.settings-audio-help-warning { display: flex; gap: 8px; margin: 0; color: #f4cf94; }
+.settings-audio-help-warning svg { width: 16px; height: 16px; flex: 0 0 auto; margin-top: 2px; }
+.settings-audio-help > button { justify-self: start; }
 .settings-value { color: #8de0e5; }
 .settings-app input[type="range"] { accent-color: #7fdbe2; }
 .settings-diagnostics { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
@@ -242,7 +243,6 @@
 .settings-utility .settings-card { padding: 14px; }
 .settings-utility .settings-card header { margin-bottom: 10px; }
 .settings-utility .settings-card h2 { font-size: 1rem; }
-.settings-utility .settings-source-choice { border: 0; border-top: 1px solid #414b55; border-radius: 0; padding: 10px 0 0; background: transparent; }
 .settings-utility .settings-diagnostics > summary { min-height: 48px; padding: 8px 12px; }
 .settings-utility .settings-diagnostics > summary svg { width: 18px; height: 18px; }
 .settings-utility .settings-history-item { grid-template-columns: 105px minmax(0,1fr); min-height: 68px; padding: 11px; }
@@ -346,7 +346,6 @@
 .settings-utility { --surface: #242629; --line: #3a3d42; color: #f3f2ee; background: #1e2024; }
 .settings-utility .utility-header { background: #202225; }
 .settings-utility .settings-card, .settings-utility .settings-diagnostics { border-radius: 6px; background: #242629; }
-.settings-utility .settings-source-choice { background: transparent; }
 .settings-utility .utility-header { min-height: 48px; padding: 7px 16px; }
 .settings-utility .utility-header h1 { font-size: 1.05rem; }
 .settings-utility .utility-content { height: calc(100vh - 48px); padding: 10px 16px 18px; }
@@ -357,7 +356,5 @@
 .settings-utility .settings-card-icon { width: 32px; height: 32px; border-radius: 5px; }
 .settings-utility .settings-card-icon svg { width: 17px; height: 17px; }
 .settings-utility .settings-card header p { font-size: .72rem; }
-.settings-utility .settings-source-choice { padding-top: 7px; }
-.settings-utility .settings-source-actions .settings-button { min-height: 34px; padding-inline: 10px; }
 .settings-utility .settings-diagnostics > summary { min-height: 38px; padding: 6px 10px; }
 .settings-utility .settings-diagnostics > summary > span { font-size: .7rem; }

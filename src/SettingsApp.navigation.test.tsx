@@ -16,6 +16,8 @@ vi.mock("./api", () => ({
     listOutputDevices: vi.fn().mockResolvedValue([]),
     startSession: vi.fn().mockResolvedValue(true),
     toggleListening: vi.fn().mockResolvedValue(false),
+    clearListeningSource: vi.fn().mockResolvedValue(undefined),
+    restartWorker: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
@@ -46,9 +48,12 @@ describe("settings with nullable desktop audio diagnostics", () => {
     expect(screen.queryByRole("dialog", { name: "ตั้งค่า" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "กำลังแปลเสียง" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "ตั้งค่า" })).toBeInTheDocument();
-    fireEvent.click(screen.getByText("ตรวจสอบเสียงเมื่อมีปัญหา"));
-    expect(await screen.findByRole("heading", { name: "Incoming audio diagnostics" })).toBeInTheDocument();
-    expect(screen.getByText("ยังไม่มี audio frame")).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "แอปที่ฟัง" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText("แก้ปัญหาเสียง"));
+    expect(screen.getByText("สถานะตอนนี้:")).toBeVisible();
+    expect(screen.getByText("ตรวจ Volume Mixer ของ Windows ว่าแอปส่งเสียงไปยังอุปกรณ์ที่ใช้อยู่")).toBeVisible();
+    expect(screen.queryByText("Incoming audio diagnostics")).not.toBeInTheDocument();
+    expect(screen.queryByText("PID ที่จับจริง")).not.toBeInTheDocument();
     fireEvent.click(screen.getByText("ตัวเลือกเสียงขั้นสูง"));
     expect(screen.getByRole("slider", { name: /VAD threshold/ })).toHaveValue("0.5");
     expect(screen.queryByRole("region", { name: "กำลังแปลเสียง" })).not.toBeInTheDocument();
@@ -76,21 +81,37 @@ describe("settings with nullable desktop audio diagnostics", () => {
     expect(await screen.findByRole("region", { name: "กำลังแปลเสียง" })).toBeInTheDocument();
   });
 
-  it.each([null, undefined, -31.25, 0])("renders Advanced with peak %s", async (peak) => {
+  it.each([null, undefined, -31.25, 0])("shows a plain audio status for peak %s", async (peak) => {
     const snapshot = vi.mocked(useSnapshot)().snapshot!;
-    Object.assign(snapshot.runtime, { audioPeakDbfs: peak });
+    Object.assign(snapshot.runtime, { audioPeakDbfs: peak, audioLastSeenAtMs: peak == null ? null : Date.now() });
     render(<SettingsApp activeTab="advanced" />);
-    expect(await screen.findByText(peak == null ? "ยังไม่มี audio frame" : `${peak.toFixed(1)} dBFS`)).toBeInTheDocument();
+    fireEvent.click(screen.getByText("แก้ปัญหาเสียง"));
+    expect(await screen.findByText(peak == null ? "ยังไม่มีเสียงเข้ามา" : peak <= -90 ? "ได้รับข้อมูลเสียง แต่เสียงยังเงียบ" : "ได้รับเสียงจากแอปแล้ว")).toBeInTheDocument();
   });
 
-  it("offers a clear action only when an app is saved", () => {
+  it("keeps app selection on the main view and clearing inside its picker", () => {
     const snapshot = vi.mocked(useSnapshot)().snapshot!;
     const view = render(<SettingsApp activeTab="advanced" advancedSection="audio" />);
+    expect(screen.queryByRole("button", { name: "เปลี่ยนแอป" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "ล้างการเลือก" })).not.toBeInTheDocument();
+    view.rerender(<SettingsApp activeTab="overview" />);
+    fireEvent.click(screen.getByRole("button", { name: "เปลี่ยน" }));
     expect(screen.getByRole("button", { name: "ล้างการเลือก" })).toBeInTheDocument();
     snapshot.settings.listeningSource = undefined;
-    view.rerender(<SettingsApp activeTab="advanced" advancedSection="audio" />);
+    view.rerender(<SettingsApp activeTab="overview" />);
     expect(screen.queryByRole("button", { name: "ล้างการเลือก" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "เลือกแอป" })).toBeInTheDocument();
+  });
+
+  it("offers a worker restart only when speech detection is unavailable", () => {
+    const snapshot = vi.mocked(useSnapshot)().snapshot!;
+    const view = render(<SettingsApp activeTab="advanced" />);
+    fireEvent.click(screen.getByText("แก้ปัญหาเสียง"));
+    expect(screen.queryByRole("button", { name: "เริ่มตัวตรวจคำพูดใหม่" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "ตรวจเสียง 6 วินาที" })).not.toBeInTheDocument();
+    snapshot.runtime.workerReady = false;
+    view.rerender(<SettingsApp activeTab="advanced" />);
+    fireEvent.click(screen.getByRole("button", { name: "เริ่มตัวตรวจคำพูดใหม่" }));
+    expect(api.restartWorker).toHaveBeenCalledOnce();
   });
 
   it("shows a worker protocol failure on Ready Room and Advanced instead of only a success notice", async () => {

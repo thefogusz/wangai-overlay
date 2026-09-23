@@ -52,7 +52,7 @@ function incomingReadiness(settings: AppSettings, runtime: RuntimeState): Readin
   if (!settings.listeningSource) return { label: "ยังไม่ได้เลือกแอป", detail: "กดเลือกแอปเพื่อเริ่มใช้งาน", tone: "setup" };
   if (!runtime.workerReady) return { label: "ตัวตรวจคำพูดยังไม่พร้อม", detail: runtime.lastError ? "พบข้อผิดพลาด กรุณาตรวจข้อความแจ้งเตือน" : "กำลังเตรียม Silero VAD", tone: runtime.lastError ? "warning" : "waiting" };
   if (!runtime.listening) return { label: "เลือกแล้ว", detail: "กด F8 เพื่อเริ่มใช้งาน", tone: "waiting" };
-  if (runtime.captureWarning) return { label: "ไม่ได้ยินเสียง", detail: "เปิดวิธีแก้ปัญหาเสียง", tone: "warning" };
+  if (runtime.captureWarning) return { label: "ไม่ได้ยินเสียง", detail: "ตรวจเสียงในแอปและ Volume Mixer", tone: "warning" };
   if (!runtime.attachedSource) return { label: "หาแอปไม่พบ", detail: `ตรวจว่า ${settings.listeningSource.displayName} ยังเปิดอยู่`, tone: "warning" };
   if (runtime.audioLastSeenAtMs == null) return { label: "รอเสียงจากแอป", detail: "กำลังเชื่อมต่อแหล่งเสียง", tone: "waiting" };
   if ((runtime.audioPeakDbfs ?? -96) <= -90) return { label: "ยังไม่ได้ยินเสียง", detail: "ตรวจว่าแอปกำลังเล่นเสียง", tone: "warning" };

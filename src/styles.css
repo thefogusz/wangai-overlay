@@ -219,6 +219,10 @@ button svg, a svg { width: 17px; height: 17px; stroke-width: 1.8; }
 .process-dialog-empty strong { color: #d4d9df; font-size: .85rem; white-space: normal; }
 .process-dialog-empty p { margin: 6px 0 0; }
 .process-dialog-preview { margin: 0; border-top: 1px solid var(--line); padding: 11px 20px; color: #b59765; font-size: .61rem; }
+.process-dialog-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid rgba(255,255,255,.1); padding: 10px 20px; color: #aeb6be; font-size: .75rem; }
+.process-dialog-footer button { border: 0; padding: 6px 0; color: #e7c6ae; background: transparent; font-weight: 650; }
+.process-dialog-footer button:hover { color: #ffe1ca; text-decoration: underline; }
+.process-dialog-footer button:disabled { opacity: .45; cursor: default; text-decoration: none; }
 .process-dialog-status { padding: 0 20px 10px; color: #a5abb5; font-size: .75rem; }
 .process-dialog-error { margin: 0 20px 12px; padding: 10px; border-radius: 8px; background: #482a2a; color: #ffd1d1; font-size: .8rem; }
 .process-app-group .process-details-toggle { margin: 3px 12px 5px; color: #9ba4ad; font-size: .7rem; }

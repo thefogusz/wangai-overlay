@@ -11,6 +11,7 @@ type Props = {
   onClose: () => void;
   onRefresh: () => void;
   onSelect: (source: CaptureSource) => Promise<void>;
+  onClear?: () => Promise<void>;
 };
 const normalizedPath = (path: string) => path.replaceAll("/", "\\").toLowerCase();
 function isSelectedApp(app: RunningApp, selected?: SavedProcess): boolean {
@@ -21,7 +22,7 @@ function isSelectedApp(app: RunningApp, selected?: SavedProcess): boolean {
     && app.searchNames.some((name) => name.toLowerCase() === selected.executableName.toLowerCase());
 }
 
-export function ProcessPickerDialog({ apps, selected, loading, error, previewMode, onClose, onRefresh, onSelect }: Props) {
+export function ProcessPickerDialog({ apps, selected, loading, error, previewMode, onClose, onRefresh, onSelect, onClear }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -29,6 +30,7 @@ export function ProcessPickerDialog({ apps, selected, loading, error, previewMod
   closeRef.current = onClose;
   const [query, setQuery] = useState("");
   const [selecting, setSelecting] = useState<number>();
+  const [clearing, setClearing] = useState(false);
   const [selectionError, setSelectionError] = useState<string>();
   const [expanded, setExpanded] = useState<string>();
   useLayoutEffect(() => {
@@ -61,6 +63,13 @@ export function ProcessPickerDialog({ apps, selected, loading, error, previewMod
     catch (error) { setSelectionError(error instanceof Error ? error.message : String(error)); }
     finally { setSelecting(undefined); }
   };
+  const clear = async () => {
+    if (!onClear) return;
+    setClearing(true); setSelectionError(undefined);
+    try { await onClear(); }
+    catch (error) { setSelectionError(error instanceof Error ? error.message : String(error)); }
+    finally { setClearing(false); }
+  };
   return <div className="process-dialog-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <div aria-labelledby="process-dialog-title" aria-modal="true" className="process-dialog" ref={dialogRef} role="dialog">
       <header><div><span><Globe2 /></span><div><p>แอปที่กำลังเปิดอยู่บนเครื่อง</p><h2 id="process-dialog-title">เลือกแอปที่จะฟัง</h2></div></div><button aria-label="ปิดหน้าต่างเลือกแอป" onClick={onClose}><X /></button></header>
@@ -76,19 +85,20 @@ export function ProcessPickerDialog({ apps, selected, loading, error, previewMod
           const open = expanded === app.id;
           const detailsId = `process-details-${app.id}`;
           return <div className="process-app-group" key={app.id}>
-            <button aria-label={multiple ? `เลือกหน้าต่างของ ${app.displayName}` : `เลือก ${app.displayName}`} aria-pressed={multiple ? undefined : checked} aria-expanded={multiple ? open : undefined} aria-controls={multiple && open ? detailsId : undefined} className={checked ? "is-selected" : ""} disabled={selecting !== undefined || (previewMode && !multiple)} onClick={() => multiple ? setExpanded(open ? undefined : app.id) : app.roots[0] && void select(app.roots[0])}>
+            <button aria-label={multiple ? `เลือกหน้าต่างของ ${app.displayName}` : `เลือก ${app.displayName}`} aria-pressed={multiple ? undefined : checked} aria-expanded={multiple ? open : undefined} aria-controls={multiple && open ? detailsId : undefined} className={checked ? "is-selected" : ""} disabled={clearing || selecting !== undefined || (previewMode && !multiple)} onClick={() => multiple ? setExpanded(open ? undefined : app.id) : app.roots[0] && void select(app.roots[0])}>
               <span className="process-choice-icon"><Monitor /></span><span><strong>{app.displayName}</strong><small>{checked ? "เลือกอยู่ · " : ""}{multiple ? "เลือกหน้าต่างที่จะฟัง" : "เลือกแอปนี้"}{duplicateName ? ` · ${app.executableName}` : ""}</small></span>
               {selecting !== undefined && app.roots.some((root) => root.pid === selecting) ? <LoaderCircle className="animate-spin" /> : checked ? <Check /> : multiple ? <ChevronDown /> : null}
             </button>
             {!multiple && <button className="process-details-toggle" aria-label={`รายละเอียด ${app.displayName}`} aria-expanded={open} aria-controls={open ? detailsId : undefined} onClick={() => setExpanded(open ? undefined : app.id)}>รายละเอียด</button>}
             {open && <div className="process-app-details" id={detailsId}>
               <p>{app.executablePath || "Windows ไม่อนุญาตให้อ่านตำแหน่งไฟล์"}</p>
-              {app.roots.map((root, index) => <div key={root.pid}><span>{root.name} · PID {root.pid}</span>{multiple && <button disabled={previewMode || selecting !== undefined} onClick={() => void select(root)}>{`เลือกหน้าต่าง ${index + 1}`}</button>}</div>)}
+              {app.roots.map((root, index) => <div key={root.pid}><span>{root.name} · PID {root.pid}</span>{multiple && <button disabled={previewMode || clearing || selecting !== undefined} onClick={() => void select(root)}>{`เลือกหน้าต่าง ${index + 1}`}</button>}</div>)}
             </div>}
           </div>;
         })}
         {!loading && choices.length === 0 && <div className="process-dialog-empty"><strong>{query.trim() ? "ไม่พบแอปที่ตรงกับคำค้น" : "ยังไม่พบแอปที่เปิดอยู่"}</strong><p>เปิดเกมหรือแอปให้ถึงหน้าหลัก แล้วกดรีเฟรชรายการด้านบน</p>{query.trim() && <p>ถ้าเปิดอยู่แล้ว ลองค้นด้วยชื่อสั้น ๆ เช่น Hell หรือ Discord</p>}</div>}
       </div>
+      {selected && onClear && <div className="process-dialog-footer"><span>ไม่ต้องการฟังแอปนี้แล้ว?</span><button disabled={previewMode || clearing || selecting !== undefined} onClick={() => void clear()}>{clearing ? "กำลังล้าง…" : "ล้างการเลือก"}</button></div>}
       {previewMode && <p className="process-dialog-preview">Browser Preview แสดงรายการจำลองและไม่สามารถเปลี่ยน process จริงได้</p>}
     </div>
   </div>;
