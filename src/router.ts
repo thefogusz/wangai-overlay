@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 export const settingsTabs = ["overview", "advanced", "history"] as const;
-export const advancedSections = ["audio", "ai", "controls"] as const;
+export const advancedSections = ["audio", "controls"] as const;
 
 export type SettingsTab = (typeof settingsTabs)[number];
 export type AdvancedSection = (typeof advancedSections)[number];

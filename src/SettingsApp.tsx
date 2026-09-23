@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { AudioLines, Cloud, Cpu, Globe2, History, KeyRound, Languages, LoaderCircle, Plus, Power, RefreshCw, Save, SlidersHorizontal, Trash2, TriangleAlert, Volume2 } from "lucide-react";
+import { AudioLines, Cpu, History, KeyRound, LoaderCircle, Power, RefreshCw, Save, SlidersHorizontal, TriangleAlert, Volume2 } from "lucide-react";
 import { api, type WebCompanionInfo } from "./api";
 import { ProcessPickerDialog } from "./ProcessPickerDialog";
 import { ReadyRoom } from "./ReadyRoom";
@@ -7,7 +7,7 @@ import { UpdatePanel } from "./UpdatePanel";
 import { advancedHref, settingsHref, type AdvancedSection, type SettingsTab } from "./router";
 import { isPreviewMode, previewOutputDevices, previewNotification, previewListeningBusy } from "./preview";
 import { useRunningApps } from "./useRunningApps";
-import type { AudioOutputDevice, CaptureSource, GlossaryTerm, HotkeySettings, OverlaySettings, SubtitleItem, VadSettings } from "./types";
+import type { AudioOutputDevice, HotkeySettings, OverlaySettings, SubtitleItem, VadSettings } from "./types";
 import { errorText, useSnapshot } from "./useSnapshot";
 
 const button = "settings-button settings-button-secondary inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold disabled:opacity-40";
@@ -33,7 +33,6 @@ export function SettingsApp({ activeTab, advancedSection = "audio" }: { activeTa
   const [vad, setVad] = useState<VadSettings>();
   const [hotkeys, setHotkeys] = useState<HotkeySettings>();
   const [overlay, setOverlay] = useState<OverlaySettings>();
-  const [glossary, setGlossary] = useState<GlossaryTerm[]>([]);
   const [webInfo, setWebInfo] = useState<WebCompanionInfo>();
 
   useEffect(() => {
@@ -41,7 +40,6 @@ export function SettingsApp({ activeTab, advancedSection = "audio" }: { activeTa
     setVad(snapshot.settings.vad);
     setHotkeys(snapshot.settings.hotkeys);
     setOverlay(snapshot.settings.overlay);
-    setGlossary(snapshot.settings.glossary);
   }, [snapshot?.settings]);
 
   const loadDevices = useCallback(async () => {
@@ -73,11 +71,11 @@ export function SettingsApp({ activeTab, advancedSection = "audio" }: { activeTa
   const notification = notice && <div role={notice.kind === "error" ? "alert" : "status"} className={`settings-notification rounded-xl border px-4 py-3 text-sm ${notice.kind === "error" ? "border-red-400/30 bg-red-400/10 text-red-200" : "border-[#63c48b]/30 bg-[#63c48b]/10 text-[#8bf0b1]"}`}>{notice.text}</div>;
 
   return <main className="settings-app settings-shell">
-    <aside className="settings-sidebar"><a className="settings-brand" href={settingsHref("overview")}><span className="settings-brand-key">W</span><span>WANGAI<small>LIVE TRANSLATION</small></span></a><nav aria-label="เมนูหลัก" className="settings-side-nav"><span className="settings-nav-label">ใช้งาน</span><a aria-current={activeTab === "overview" ? "page" : undefined} href={settingsHref("overview")}><AudioLines />หน้าหลัก</a><a aria-current={activeTab === "history" ? "page" : undefined} href={settingsHref("history")}><History />ประวัติคำแปล</a><span className="settings-nav-label">ตั้งค่า</span><a aria-current={activeTab === "advanced" && advancedSection === "audio" ? "page" : undefined} href={advancedHref("audio")}><Volume2 />เสียงและแอป</a><a aria-current={activeTab === "advanced" && advancedSection === "ai" ? "page" : undefined} href={advancedHref("ai")}><Languages />AI และคำศัพท์</a><a aria-current={activeTab === "advanced" && advancedSection === "controls" ? "page" : undefined} href={advancedHref("controls")}><KeyRound />ปุ่มลัดและ Overlay</a></nav><div className="settings-sidebar-footer"><span className={`settings-sidebar-dot ${runtime.lastError || runtime.captureWarning ? "is-warning" : ""}`} />{runtime.lastError || runtime.captureWarning ? "ต้องตรวจสอบ" : runtime.listening ? "กำลังฟัง" : runtime.workerReady ? "ระบบพร้อม" : "กำลังเตรียมระบบ"}</div></aside>
-    <div className="settings-workspace"><header className="settings-toolbar"><div><span className="settings-toolbar-eyebrow">WANGAI / {activeTab === "advanced" ? "SETTINGS" : activeTab === "history" ? "HISTORY" : "HOME"}</span><h1>{activeTab === "overview" ? "หน้าหลัก" : activeTab === "history" ? "ประวัติคำแปล" : advancedSection === "audio" ? "เสียงและแอป" : advancedSection === "ai" ? "AI และคำศัพท์" : "ปุ่มลัดและ Overlay"}</h1></div><div className="settings-toolbar-actions">{activeTab === "advanced" && <a className="settings-toolbar-back" href={settingsHref("overview")}>กลับหน้าหลัก</a>}{isDesktop() && <button className="settings-quit" onClick={() => void api.quitApp().catch((error) => setToast({ kind: "error", text: errorText(error) }))}><Power className="size-4" />ออกจากโปรแกรม</button>}</div></header><div className="settings-content">
+    <aside className="settings-sidebar"><a className="settings-brand" href={settingsHref("overview")}><span className="settings-brand-key">W</span><span>WANGAI<small>LIVE TRANSLATION</small></span></a><nav aria-label="เมนูหลัก" className="settings-side-nav"><span className="settings-nav-label">ใช้งาน</span><a aria-current={activeTab === "overview" ? "page" : undefined} href={settingsHref("overview")}><AudioLines />หน้าหลัก</a><a aria-current={activeTab === "history" ? "page" : undefined} href={settingsHref("history")}><History />ประวัติคำแปล</a><span className="settings-nav-label">ตั้งค่า</span><a aria-current={activeTab === "advanced" && advancedSection === "audio" ? "page" : undefined} href={advancedHref("audio")}><Volume2 />เสียงและแอป</a><a aria-current={activeTab === "advanced" && advancedSection === "controls" ? "page" : undefined} href={advancedHref("controls")}><KeyRound />ปุ่มลัดและ Overlay</a></nav><div className="settings-sidebar-footer"><span className={`settings-sidebar-dot ${runtime.lastError || runtime.captureWarning ? "is-warning" : ""}`} />{runtime.lastError || runtime.captureWarning ? "ต้องตรวจสอบ" : runtime.listening ? "กำลังฟัง" : runtime.workerReady ? "ระบบพร้อม" : "กำลังเตรียมระบบ"}</div></aside>
+    <div className="settings-workspace"><header className="settings-toolbar"><div><span className="settings-toolbar-eyebrow">WANGAI / {activeTab === "advanced" ? "SETTINGS" : activeTab === "history" ? "HISTORY" : "HOME"}</span><h1>{activeTab === "overview" ? "หน้าหลัก" : activeTab === "history" ? "ประวัติคำแปล" : advancedSection === "audio" ? "เสียงและแอป" : "ปุ่มลัดและ Overlay"}</h1></div><div className="settings-toolbar-actions">{activeTab === "advanced" && <a className="settings-toolbar-back" href={settingsHref("overview")}>กลับหน้าหลัก</a>}{isDesktop() && <button className="settings-quit" onClick={() => void api.quitApp().catch((error) => setToast({ kind: "error", text: errorText(error) }))}><Power className="size-4" />ออกจากโปรแกรม</button>}</div></header><div className="settings-content">
     {activeTab === "overview" && <UpdatePanel compact />}
     {activeTab !== "overview" && notification && <div className="mb-4">{notification}</div>}
-    {activeTab === "overview" && <ReadyRoom notification={notification} settings={settings} runtime={runtime} history={snapshot.history} busy={busy} previewMode={isPreviewMode()} onToggleListening={() => void run("listen", api.toggleListening, runtime.listening ? "หยุดฟังแล้ว" : "เริ่มฟังแล้ว")} onOpenSourcePicker={() => setPicker(true)} onOpenWebCompanion={!isWeb() ? () => void run("web", api.openWebCompanion, "เปิด Web App แล้ว") : undefined} webCompanionOrigin={webInfo?.origin} webRuntime={isWeb()} />}
+    {activeTab === "overview" && <ReadyRoom notification={notification} settings={settings} runtime={runtime} busy={busy} previewMode={isPreviewMode()} onToggleListening={() => void run("listen", api.toggleListening, runtime.listening ? "หยุดฟังแล้ว" : "เริ่มฟังแล้ว")} onOpenSourcePicker={() => setPicker(true)} onOpenWebCompanion={!isWeb() ? () => void run("web", api.openWebCompanion, "เปิด Web App แล้ว") : undefined} webCompanionOrigin={webInfo?.origin} webRuntime={isWeb()} />}
     {activeTab === "history" && <HistoryView history={snapshot.history} />}
     {activeTab === "advanced" && <>
       {advancedSection === "audio" && <section className="space-y-4">
@@ -95,17 +93,6 @@ export function SettingsApp({ activeTab, advancedSection = "audio" }: { activeTa
         <Card title="Local Silero VAD" icon={<Cpu />} subtitle={`โปรไฟล์ ${settings.captureMode === "process_tree" ? "Process Tree" : "System Output"} จำค่าแยกกัน`}>
           <div className="grid gap-5 md:grid-cols-2"><Slider label="VAD threshold" min={0.05} max={0.9} step={0.05} value={profile.vadThreshold} display={profile.vadThreshold.toFixed(2)} onChange={(value) => setVad({ ...vad, [profileKey]: { ...profile, vadThreshold: value } })} /><Slider label="VAD gain" min={0} max={18} step={1} value={profile.gainDb} display={`+${profile.gainDb} dB`} onChange={(value) => setVad({ ...vad, [profileKey]: { ...profile, gainDb: value } })} /><Slider label="จบเมื่อเงียบ" min={200} max={1500} step={100} value={vad.silenceMs} display={`${vad.silenceMs} ms`} onChange={(value) => setVad({ ...vad, silenceMs: value })} /><Slider label="Pre-roll" min={0} max={1000} step={50} value={vad.preRollMs} display={`${vad.preRollMs} ms`} onChange={(value) => setVad({ ...vad, preRollMs: value })} /></div><button className={`${primary} mt-5`} onClick={() => void run("vad", () => api.updateVad(vad), "บันทึก VAD แล้ว")}><Save />บันทึกและ Restart</button>
         </Card></div></details>
-      </section>}
-      {advancedSection === "ai" && <section className="space-y-4">
-        <Card title="คำศัพท์เกม" icon={<Languages />} subtitle="เพิ่มชื่อเฉพาะที่อยากให้แปลตรงตามเกม"><div className="settings-glossary-head"><span>คำในเกม</span><span>คำแปลที่ต้องการ</span></div>{glossary.map((term, index) => <div className="mb-2 flex gap-2" key={index}><input aria-label={`คำในเกม ${index + 1}`} className={input} value={term.source} onChange={(e) => setGlossary(glossary.map((v, i) => i === index ? { ...v, source: e.target.value } : v))} /><input aria-label={`คำแปลที่ต้องการ ${index + 1}`} className={input} value={term.target} onChange={(e) => setGlossary(glossary.map((v, i) => i === index ? { ...v, target: e.target.value } : v))} /><button aria-label={`ลบคำศัพท์ ${index + 1}`} className={button} onClick={() => setGlossary(glossary.filter((_, i) => i !== index))}><Trash2 /></button></div>)}<div className="flex gap-2"><button className={button} onClick={() => setGlossary([...glossary, { source: "", target: "" }])}><Plus />เพิ่มคำ</button><button className={primary} onClick={() => void run("glossary", () => api.updateGlossary(glossary), "บันทึกคำศัพท์แล้ว")}>บันทึก</button></div></Card>
-        <Card title="บริการ AI" icon={<Cloud />} subtitle="ใช้บริการกลาง ไม่ต้องใส่ API key หรือเลือกโมเดลเอง">
-          <p role="status" aria-label="สถานะบริการ AI" className="settings-ai-status mb-4 text-sm">{runtime.aiService.message}</p>
-          <details className="settings-model-details"><summary>รายละเอียดโมเดล</summary><div className="grid gap-3 md:grid-cols-3">
-            <Info label="Incoming STT" value={runtime.aiService.incomingModel || "รอเชื่อมต่อ"} />
-            <Info label="F9 microphone STT" value={runtime.aiService.microphoneModel || "รอเชื่อมต่อ"} />
-            <Info label="Translation" value={runtime.aiService.translationModel || "รอเชื่อมต่อ"} />
-          </div><p className="mt-4 text-sm">โมเดลและ credentials กำหนดโดยผู้ดูแลเซิร์ฟเวอร์</p></details>
-        </Card>
       </section>}
       {advancedSection === "controls" && <section className="space-y-4"><Card title="ปุ่มลัด" icon={<KeyRound />} subtitle="ควบคุมการฟังและ Overlay ระหว่างเล่นเกม"><div className="grid gap-3 md:grid-cols-2">{Object.entries(hotkeys).map(([key, value]) => <label className="settings-hotkey-label text-sm" key={key}>{hotkeyLabels[key as keyof HotkeySettings]}<input className={`${input} mt-1`} value={value} onChange={(event) => setHotkeys({ ...hotkeys, [key]: event.target.value })} /></label>)}</div><button className={`${primary} mt-4`} onClick={() => void run("hotkeys", () => api.updateHotkeys(hotkeys), "บันทึกปุ่มลัดแล้ว")}>บันทึกปุ่มลัด</button></Card><Card title="Overlay" icon={<SlidersHorizontal />} subtitle="ตั้งค่าหน้าต่างคำแปลในเกม"><div className="grid gap-5 md:grid-cols-2"><Slider label="ความทึบของ Overlay" min={0.2} max={1} step={0.05} value={overlay.opacity} display={`${Math.round(overlay.opacity * 100)}%`} onChange={(value) => setOverlay({ ...overlay, opacity: value })} /><Slider label="จำนวนข้อความ" min={1} max={5} step={1} value={overlay.maxItems} display={`${overlay.maxItems}`} onChange={(value) => setOverlay({ ...overlay, maxItems: value })} /></div><button className={`${primary} mt-4`} onClick={() => void run("overlay", () => api.updateOverlay(overlay), "บันทึก Overlay แล้ว")}>บันทึก Overlay</button></Card><UpdatePanel /></section>}
     </>}

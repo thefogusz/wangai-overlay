@@ -8,7 +8,7 @@ describe("single-source Ready Room", () => {
   it.each(["offline", "degraded", "connecting"] as const)("shows AI %s while keeping stop available", (state) => {
     const snapshot = snapshotFixture();
     snapshot.runtime.aiService = { ...snapshot.runtime.aiService, state, message: "สถานะจาก gateway", retryAfterMs: state === "degraded" ? 5000 : null };
-    const props = { settings: snapshot.settings, runtime: snapshot.runtime, history: [], previewMode: false, onToggleListening: vi.fn(), onOpenSourcePicker: vi.fn(), webRuntime: false };
+    const props = { settings: snapshot.settings, runtime: snapshot.runtime, previewMode: false, onToggleListening: vi.fn(), onOpenSourcePicker: vi.fn(), webRuntime: false };
     const view = render(<ReadyRoom {...props} />);
     expect(screen.getByText("สถานะจาก gateway")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /หยุดฟัง · F8/ })).toBeEnabled();
@@ -19,7 +19,7 @@ describe("single-source Ready Room", () => {
 
   it("recovers from offline without asking for user credentials", () => {
     const snapshot = snapshotFixture();
-    const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: false }, history: [], previewMode: false, onToggleListening: vi.fn(), onOpenSourcePicker: vi.fn(), webRuntime: true };
+    const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: false }, previewMode: false, onToggleListening: vi.fn(), onOpenSourcePicker: vi.fn(), webRuntime: true };
     const view = render(<ReadyRoom {...props} runtime={{ ...props.runtime, aiService: { ...props.runtime.aiService, state: "offline" } }} />);
     expect(screen.getByRole("button", { name: /เริ่มฟัง · F8/ })).toBeDisabled();
     view.rerender(<ReadyRoom {...props} />);
@@ -28,17 +28,21 @@ describe("single-source Ready Room", () => {
   });
   it("shows only the listening source and translation rows", () => {
     const snapshot = snapshotFixture();
-    render(<ReadyRoom settings={snapshot.settings} runtime={snapshot.runtime} history={snapshot.history} previewMode={false} onToggleListening={vi.fn()} onOpenSourcePicker={vi.fn()} webRuntime={false} />);
+    render(<ReadyRoom settings={snapshot.settings} runtime={snapshot.runtime} previewMode={false} onToggleListening={vi.fn()} onOpenSourcePicker={vi.fn()} webRuntime={false} />);
     expect(screen.getByText("แหล่งเสียงที่ฟัง")).toBeInTheDocument();
     expect(screen.getByText("การแปล")).toBeInTheDocument();
     expect(screen.queryByText("Voice chat")).not.toBeInTheDocument();
     expect(screen.queryByText("Browser media")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "บทสนทนาล่าสุด" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "ข้อมูล" })).not.toBeInTheDocument();
+    expect(screen.getByText("อังกฤษ → ไทย")).toBeInTheDocument();
+    expect(screen.queryByText("บริการ AI กลาง")).not.toBeInTheDocument();
   });
 
   it("uses one change action for every application", () => {
     const snapshot = snapshotFixture();
     const open = vi.fn();
-    render(<ReadyRoom settings={snapshot.settings} runtime={snapshot.runtime} history={snapshot.history} previewMode={false} onToggleListening={vi.fn()} onOpenSourcePicker={open} webRuntime={false} />);
+    render(<ReadyRoom settings={snapshot.settings} runtime={snapshot.runtime} previewMode={false} onToggleListening={vi.fn()} onOpenSourcePicker={open} webRuntime={false} />);
     fireEvent.click(screen.getByRole("button", { name: "เปลี่ยน" }));
     expect(open).toHaveBeenCalledOnce();
   });
@@ -46,7 +50,7 @@ describe("single-source Ready Room", () => {
   it("makes choosing an app the single primary setup action", () => {
     const snapshot = snapshotFixture();
     const open = vi.fn();
-    render(<ReadyRoom settings={{ ...snapshot.settings, listeningSource: undefined }} runtime={{ ...snapshot.runtime, listening: false }} history={[]} previewMode={false} onToggleListening={vi.fn()} onOpenSourcePicker={open} webRuntime={false} />);
+    render(<ReadyRoom settings={{ ...snapshot.settings, listeningSource: undefined }} runtime={{ ...snapshot.runtime, listening: false }} previewMode={false} onToggleListening={vi.fn()} onOpenSourcePicker={open} webRuntime={false} />);
     expect(screen.getByRole("heading", { name: "เลือกแอปแล้วเริ่มแปล" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /เริ่มฟัง · F8/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "เลือกแอปที่จะฟัง" }));
@@ -55,7 +59,7 @@ describe("single-source Ready Room", () => {
 
   it("displays the selected application dynamically even before listening starts", () => {
     const snapshot = snapshotFixture();
-    const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: false }, history: [], previewMode: false, onToggleListening: vi.fn(), onOpenSourcePicker: vi.fn(), webRuntime: false };
+    const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: false }, previewMode: false, onToggleListening: vi.fn(), onOpenSourcePicker: vi.fn(), webRuntime: false };
     const view = render(<ReadyRoom {...props} />);
     for (const displayName of ["Discord", "Google Chrome", "My Custom App"]) {
       view.rerender(<ReadyRoom {...props} settings={{ ...snapshot.settings, listeningSource: { ...snapshot.settings.listeningSource!, displayName } }} />);
@@ -70,7 +74,7 @@ describe("single-source Ready Room", () => {
   it("keeps the listening action prominent after the heading with or without a notification", () => {
     const snapshot = snapshotFixture();
     const toggle = vi.fn();
-    const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: false }, history: [], previewMode: false, onToggleListening: toggle, onOpenSourcePicker: vi.fn(), webRuntime: false };
+    const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: false }, previewMode: false, onToggleListening: toggle, onOpenSourcePicker: vi.fn(), webRuntime: false };
     const view = render(<ReadyRoom {...props} />);
     const start = screen.getByRole("button", { name: /เริ่มฟัง · F8/ });
     const title = screen.getByRole("heading", { name: "พร้อมเริ่มแปล" });
@@ -86,7 +90,7 @@ describe("single-source Ready Room", () => {
   it("retains busy and stop states in the toolbar", () => {
     const snapshot = snapshotFixture();
     const toggle = vi.fn();
-    const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: true }, history: [], previewMode: false, onToggleListening: toggle, onOpenSourcePicker: vi.fn(), webRuntime: false };
+    const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: true }, previewMode: false, onToggleListening: toggle, onOpenSourcePicker: vi.fn(), webRuntime: false };
     const view = render(<ReadyRoom {...props} busy="listen" />);
     expect(screen.getByRole("button", { name: /หยุดฟัง · F8/ })).toBeDisabled();
     view.rerender(<ReadyRoom {...props} />);

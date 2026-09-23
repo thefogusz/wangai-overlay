@@ -2,20 +2,19 @@
 
 ## Job and structure
 
-WANGAI should let a player choose one app, check whether audio and translation are ready, then start or stop listening. The main window uses a left navigation rail, a compact toolbar, and a work area. The active session and F8 action are visible first. History, diagnostics, and detailed tuning stay one click away.
+WANGAI should let a player choose one app, check whether audio and translation are ready, then start or stop listening. The main window uses a left navigation rail, a compact toolbar, and a work area. The active session and F8 action are visible first. History, diagnostics, and detailed tuning stay one click away. The home screen does not repeat the transcript history or expose server model configuration.
 
 The dark theme is the default. Charcoal and blue slate carry the workspace, warm cream makes Thai copy legible, cyan identifies a live connection, and amber highlights the selected app and the primary action. Status uses words and icons as well as colour. The retro W key and warm accent borrow the character of the Mat reference; dense navigation and compact status rows follow desktop tools.
 
-The earlier gray-green version gave all surfaces, statuses, and actions similar weight. In the revised hierarchy the selected app and session control form one command strip, source and AI readiness sit below it, and recent speech is a single compact list. Setup offers one prominent Choose App action. Error states say “ต้องตรวจสอบ” in the summary and sidebar.
+The earlier gray-green version gave all surfaces, statuses, and actions similar weight. In the revised hierarchy the selected app and session control form one command strip, with source and translation readiness below it. Setup offers one prominent Choose App action. Error states say “ต้องตรวจสอบ” in the summary and sidebar. History owns the transcript list; the translation status row has no link to a separate AI page.
 
 ## Screens
 
 | Screen | Primary task | Supporting detail |
 | --- | --- | --- |
-| Home | Select an app and start or stop listening | Audio and AI readiness, recent translation |
+| Home | Select an app and start or stop listening | Audio and translation readiness |
 | App picker | Find a running game or app | PID and executable path under Details |
 | Audio and app | Change source | Diagnostics and capture tuning in disclosures |
-| AI and glossary | Inspect service and edit terms | Model details |
 | Hotkeys and Overlay | Configure in-game controls | Update status |
 | Portable preparation | Choose a folder and prepare WANGAI | Data migration guidance |
 

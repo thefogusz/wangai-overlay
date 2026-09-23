@@ -83,12 +83,10 @@ describe("settings with nullable desktop audio diagnostics", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("เริ่มฟังแล้ว");
     const stop = screen.getByRole("button", { name: /หยุดฟัง · F8/ });
     expect(stop).not.toContainElement(screen.getByRole("status"));
-    view.rerender(<SettingsApp activeTab="advanced" advancedSection="ai" />);
+    view.rerender(<SettingsApp activeTab="advanced" advancedSection="controls" />);
     expect(screen.getByText("เริ่มฟังแล้ว")).toBeInTheDocument();
-    expect(screen.getByRole("status", { name: "สถานะบริการ AI" })).toBeInTheDocument();
-    expect(screen.queryByLabelText("Groq API key")).not.toBeInTheDocument();
-    expect(screen.getByText("ใช้บริการกลาง ไม่ต้องใส่ API key หรือเลือกโมเดลเอง")).toBeInTheDocument();
-    expect(screen.getByText("server-configured-model")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "AI และคำศัพท์" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("heading", { name: "ปุ่มลัด" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "AI และคำศัพท์" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "ปุ่มลัดและ Overlay" })).toHaveAttribute("aria-current", "page");
   });
 });
