@@ -14,11 +14,12 @@ type Props = {
   webCompanionOrigin?: string;
   webRuntime: boolean;
   notification?: ReactNode;
+  showSecondary?: boolean;
 };
 type Tone = "ready" | "waiting" | "warning" | "setup";
 type Readiness = { label: string; detail: string; tone: Tone };
 
-export function ReadyRoom({ settings, runtime, busy, previewMode, onToggleListening, onOpenSourcePicker, onOpenWebCompanion, webCompanionOrigin, webRuntime, notification }: Props) {
+export function ReadyRoom({ settings, runtime, busy, previewMode, onToggleListening, onOpenSourcePicker, onOpenWebCompanion, webCompanionOrigin, webRuntime, notification, showSecondary = true }: Props) {
   useEffect(() => {
     if (webRuntime || previewMode || !isTauri()) return;
     const frame = requestAnimationFrame(() => { void invoke("portable_frontend_ready").catch(() => {}); });
@@ -32,15 +33,14 @@ export function ReadyRoom({ settings, runtime, busy, previewMode, onToggleListen
   return <div className="ready-room-grid">
     {notification && <div className="ready-notification-slot">{notification}</div>}
     <section className="ready-room-panel" aria-labelledby="ready-room-title">
-      <div className="ready-room-intro"><div><p className="eyebrow">WANGAI LIVE</p><h2 id="ready-room-title">{needsSource ? "ยังไม่ได้เลือกแอป" : runtime.listening ? "กำลังฟังและแปล" : "พร้อมเริ่มแปล"}</h2><p>{needsSource ? "เลือกแอปที่ต้องการฟังก่อนเริ่มแปลเสียง" : "คำแปลจะขึ้นบน Overlay ระหว่างที่คุณเล่นเกม"}</p></div><span className={`ready-summary ${needsSource || needsAttention ? "is-warning" : runtime.listening ? "is-live" : "is-ready"}`}>{needsSource || needsAttention ? <TriangleAlert /> : runtime.listening ? <AudioLines /> : <Check />}{needsSource ? "ยังไม่ได้เลือกแหล่งเสียง" : needsAttention ? "ต้องตรวจสอบ" : runtime.listening ? "กำลังทำงาน" : "พร้อมเริ่มฟัง"}</span></div>
+      <div className="ready-room-intro"><div><p className="eyebrow">WANGAI LIVE</p><h2 id="ready-room-title">{needsSource ? "เริ่มแปลเสียง" : runtime.listening ? "กำลังฟังและแปล" : "พร้อมเริ่มแปล"}</h2><p>{needsSource ? "เลือกแอปที่ต้องการฟังก่อนเริ่มแปลเสียง" : "คำแปลจะขึ้นบน Overlay ระหว่างที่คุณเล่นเกม"}</p></div><span className={`ready-summary ${needsSource || needsAttention ? "is-warning" : runtime.listening ? "is-live" : "is-ready"}`}>{needsSource || needsAttention ? <TriangleAlert /> : runtime.listening ? <AudioLines /> : <Check />}{needsSource ? "ต้องเลือกแหล่งเสียง" : needsAttention ? "ต้องตรวจสอบ" : runtime.listening ? "กำลังทำงาน" : "พร้อมเริ่มฟัง"}</span></div>
       <div className="ready-primary-action"><span className="ready-game-mark" aria-hidden="true"><Headphones /></span><div className="ready-primary-context"><small>{needsSource ? "แหล่งเสียง" : runtime.listening ? "แอปที่กำลังฟัง" : "แอปที่เลือก"}</small><strong>{settings.listeningSource?.displayName ?? "ยังไม่ได้เลือกแอป"}</strong><span>{runtime.listening ? "ฟังเสียงอยู่ · แปลเป็นไทยแบบสด" : configured ? "กด F8 เพื่อเชื่อมต่อเสียงจากแอป" : needsSource ? "เลือกเกมหรือแอปที่ต้องการฟัง" : "รอระบบเสียงหรือบริการ AI พร้อม"}</span></div>{needsSource ? <button aria-label="เลือกแอปที่จะฟัง" className="ready-listen-button is-select" onClick={onOpenSourcePicker}><Headphones /><span>เลือกแอป</span><small>ขั้นตอนแรก</small></button> : <button className={`ready-listen-button ${runtime.listening ? "is-listening" : ""}`} disabled={busy === "listen" || previewMode || (!runtime.listening && !configured)} onClick={onToggleListening}>{busy === "listen" ? <LoaderCircle className="animate-spin" /> : runtime.listening ? <AudioLines /> : <Headphones />}<span>{runtime.listening ? "หยุดฟัง · F8" : "เริ่มฟัง · F8"}</span><small>{runtime.listening ? "หยุดการแปลเสียง" : "เปิด Overlay"}</small></button>}{!configured && !needsSource && <div className="ready-action-hint"><strong>{!runtime.workerReady ? "กำลังเตรียมระบบเสียง" : "กำลังเชื่อมต่อบริการแปล"}</strong><span>{runtime.lastError ?? "สถานะจะอัปเดตอัตโนมัติเมื่อพร้อม"}</span></div>}</div>
       {!needsSource && <div className="ready-source-list">
         <Row action="เปลี่ยน" icon={<Radio />} index={1} meterLabel="ระดับเสียงขาเข้า" meterValue={runtime.audioPeakDbfs} name={settings.listeningSource?.displayName ?? "แอปที่เลือก"} onAction={onOpenSourcePicker} readiness={incoming} title="แหล่งเสียงที่ฟัง" />
         <Row icon={<Cloud />} index={2} name="อังกฤษ → ไทย" readiness={ai} title="การแปล" />
       </div>}
     </section>
-    <details className="ready-privacy"><summary><ShieldCheck />ความเป็นส่วนตัวและการส่งข้อมูล <ChevronRight /></summary><p>ส่งเฉพาะช่วงคำพูดและข้อความผ่านเซิร์ฟเวอร์ WANGAI ไปยัง AI provider ไม่บันทึกเนื้อหาบนเซิร์ฟเวอร์ เก็บสถิติการใช้งานด้วยรหัสติดตั้งแบบสุ่ม</p></details>
-    <div className="ready-footer-actions">{!webRuntime && onOpenWebCompanion && <button title={webCompanionOrigin} onClick={onOpenWebCompanion}><Globe2 />เปิด Web App</button>}{webRuntime && <span><Globe2 />Web Companion · เชื่อมต่อ Desktop</span>}{previewMode && <span>ข้อมูลจำลองสำหรับ Browser Preview</span>}</div>
+    {showSecondary && <><details className="ready-privacy"><summary><ShieldCheck />ความเป็นส่วนตัวและการส่งข้อมูล <ChevronRight /></summary><p>ส่งเฉพาะช่วงคำพูดและข้อความผ่านเซิร์ฟเวอร์ WANGAI ไปยัง AI provider ไม่บันทึกเนื้อหาบนเซิร์ฟเวอร์ เก็บสถิติการใช้งานด้วยรหัสติดตั้งแบบสุ่ม</p></details><div className="ready-footer-actions">{!webRuntime && onOpenWebCompanion && <button title={webCompanionOrigin} onClick={onOpenWebCompanion}><Globe2 />เปิด Web App</button>}{webRuntime && <span><Globe2 />Web Companion · เชื่อมต่อ Desktop</span>}{previewMode && <span>ข้อมูลจำลองสำหรับ Browser Preview</span>}</div></>}
   </div>;
 }
 

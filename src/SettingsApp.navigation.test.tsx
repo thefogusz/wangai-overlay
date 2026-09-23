@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 import { SettingsApp } from "./SettingsApp";
@@ -34,23 +34,33 @@ describe("settings with nullable desktop audio diagnostics", () => {
     window.history.replaceState(null, "", "/");
   });
 
-  it("opens Advanced from Ready Room before any audio frames arrive", async () => {
+  it("opens settings in a sheet without leaving the control surface", async () => {
     render(<App />);
     expect(screen.getByRole("meter", { name: "ระดับเสียงขาเข้า" })).toHaveAttribute("aria-valuenow", "0");
     expect(screen.getByText("รอเสียงจากแอป")).toBeInTheDocument();
-    const link = screen.getByRole("link", { name: "เสียงและแอป" });
-    fireEvent.click(link);
-    await act(async () => {
-      window.location.hash = link.getAttribute("href")!;
-      window.dispatchEvent(new HashChangeEvent("hashchange"));
-    });
+    fireEvent.click(screen.getByRole("button", { name: "ตั้งค่า" }));
+    expect(screen.getByRole("dialog", { name: "ตั้งค่า" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "กำลังฟังและแปล" })).toBeInTheDocument();
     expect(screen.getByText("ยังไม่มี audio frame")).not.toBeVisible();
     fireEvent.click(screen.getByText("ตรวจสอบเสียงเมื่อมีปัญหา"));
     expect(await screen.findByRole("heading", { name: "Incoming audio diagnostics" })).toBeInTheDocument();
     expect(screen.getByText("ยังไม่มี audio frame")).toBeVisible();
     fireEvent.click(screen.getByText("ตัวเลือกเสียงขั้นสูง"));
     expect(screen.getByRole("slider", { name: /VAD threshold/ })).toHaveValue("0.5");
-    expect(screen.getByRole("link", { name: "กลับหน้าหลัก" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "ปิดแผง" }));
+    expect(screen.queryByRole("dialog", { name: "ตั้งค่า" })).not.toBeInTheDocument();
+  });
+
+  it("opens history in a sheet and returns focus when dismissed", () => {
+    render(<SettingsApp activeTab="overview" />);
+    const history = screen.getByRole("button", { name: "ประวัติคำแปล" });
+    history.focus();
+    fireEvent.click(history);
+    expect(screen.getByRole("dialog", { name: "ประวัติคำแปล" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "คำแปลในรอบนี้" })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "ประวัติคำแปล" })).not.toBeInTheDocument();
+    expect(history).toHaveFocus();
   });
 
   it.each([null, undefined, -31.25, 0])("renders Advanced with peak %s", async (peak) => {
@@ -87,16 +97,17 @@ describe("settings with nullable desktop audio diagnostics", () => {
     expect(screen.queryByText("ตัวตรวจคำพูดยังไม่พร้อม")).not.toBeInTheDocument();
   });
 
-  it("keeps success feedback and F8 separate and preserves feedback through navigation", async () => {
+  it("keeps success feedback and F8 separate while opening settings", async () => {
     window.history.replaceState(null, "", "/?preview=1&ui=success#/settings/overview");
-    const view = render(<SettingsApp activeTab="overview" />);
+    render(<SettingsApp activeTab="overview" />);
     expect(await screen.findByRole("status")).toHaveTextContent("เริ่มฟังแล้ว");
     const stop = screen.getByRole("button", { name: /หยุดฟัง · F8/ });
     expect(stop).not.toContainElement(screen.getByRole("status"));
-    view.rerender(<SettingsApp activeTab="advanced" advancedSection="controls" />);
+    fireEvent.click(screen.getByRole("button", { name: "ตั้งค่า" }));
     expect(screen.getByText("เริ่มฟังแล้ว")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("ปุ่มลัดและ Overlay"));
     expect(screen.getByRole("heading", { name: "ปุ่มลัด" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "AI และคำศัพท์" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "ปุ่มลัดและ Overlay" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("dialog", { name: "ตั้งค่า" })).toBeInTheDocument();
   });
 });

@@ -51,8 +51,8 @@ describe("single-source Ready Room", () => {
     const snapshot = snapshotFixture();
     const open = vi.fn();
     render(<ReadyRoom settings={{ ...snapshot.settings, listeningSource: undefined }} runtime={{ ...snapshot.runtime, listening: false }} previewMode={false} onToggleListening={vi.fn()} onOpenSourcePicker={open} webRuntime={false} />);
-    expect(screen.getByRole("heading", { name: "ยังไม่ได้เลือกแอป" })).toBeInTheDocument();
-    expect(screen.getByText("ยังไม่ได้เลือกแหล่งเสียง")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "เริ่มแปลเสียง" })).toBeInTheDocument();
+    expect(screen.getByText("ต้องเลือกแหล่งเสียง")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /เริ่มฟัง · F8/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "เลือกแอปที่จะฟัง" }));
     expect(open).toHaveBeenCalledOnce();
@@ -68,7 +68,7 @@ describe("single-source Ready Room", () => {
       expect(screen.queryByText("Mistfall Hunter", { exact: true })).not.toBeInTheDocument();
     }
     view.rerender(<ReadyRoom {...props} settings={{ ...snapshot.settings, listeningSource: undefined }} />);
-    expect(screen.getByRole("heading", { name: "ยังไม่ได้เลือกแอป" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "เริ่มแปลเสียง" })).toBeInTheDocument();
     expect(screen.queryByText("My Custom App", { exact: true })).not.toBeInTheDocument();
   });
 

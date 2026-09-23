@@ -209,3 +209,68 @@
 @media (prefers-reduced-motion: reduce) {
   .settings-content > *, .settings-app .process-dialog { animation: none; }
 }
+
+/* One-page desktop control surface. Secondary tasks open in a contained sheet. */
+.settings-one-page { display: block; min-height: 100vh; }
+.settings-one-page .settings-toolbar { min-height: 64px; padding: 10px 24px; }
+.settings-top-brand { display: inline-flex; align-items: center; gap: 10px; color: #fff8ed; font: 700 1.04rem var(--font-display); line-height: 1; }
+.settings-top-brand > span:last-child { display: grid; }
+.settings-top-brand small { margin-top: 5px; color: #aab5bb; font: 700 .56rem var(--font-mono); letter-spacing: .08em; }
+.settings-top-brand .settings-brand-key { width: 34px; height: 34px; font-size: 1rem; }
+.settings-top-status { display: inline-flex; align-items: center; gap: 8px; margin-right: 8px; color: #c4d2d1; font-size: .76rem; white-space: nowrap; }
+.settings-top-action { display: inline-flex; min-height: 40px; align-items: center; gap: 8px; border: 1px solid transparent; border-radius: 8px; padding: 0 10px; color: #dce8e7; background: transparent; font-size: .79rem; font-weight: 650; transition: background-color 140ms ease, border-color 140ms ease; }
+.settings-top-action:hover { border-color: #46535d; background: #2b343e; }
+.settings-top-action svg { width: 17px; height: 17px; color: #8dd9dc; }
+.settings-one-page .settings-workspace { min-height: calc(100vh - 64px); }
+.settings-one-page .settings-content { max-width: 880px; margin: 0 auto; padding: clamp(24px, 5vh, 48px) 24px 30px; }
+.settings-one-page .settings-content > .update-panel { margin-bottom: 12px; }
+.settings-one-page .ready-room-intro { padding-bottom: 14px; }
+.settings-one-page .ready-room-intro h2 { font-size: 1.52rem; }
+.settings-one-page .ready-primary-action { min-height: 94px; margin-bottom: 10px; padding: 14px 16px; }
+.settings-one-page .ready-source-row { min-height: 64px; padding: 8px 13px; }
+.settings-one-page .ready-source-row:first-child .ready-source-name span { display: none; }
+.settings-one-page .ready-source-icon { width: 33px; height: 33px; }
+.settings-one-page .ready-source-icon svg { width: 17px; height: 17px; }
+.settings-one-page .ready-privacy { margin-top: 2px; }
+.settings-one-page .ready-footer-actions { min-height: 26px; }
+.settings-sheet-backdrop { position: fixed; z-index: 60; inset: 0; display: flex; justify-content: flex-end; background: #090d13b8; animation: sheet-fade 140ms ease both; }
+.settings-one-page .settings-content > .settings-sheet-backdrop { animation: sheet-fade 140ms ease both; }
+.settings-sheet { display: flex; flex-direction: column; width: min(590px, 100%); min-width: 0; height: 100%; border-left: 1px solid #52606b; color: #f7f3eb; background: #1c222b; box-shadow: -22px 0 55px #05070aaa; animation: sheet-enter 180ms cubic-bezier(.2,.8,.2,1) both; }
+.settings-sheet-header { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; min-height: 68px; gap: 16px; border-bottom: 1px solid #3d4651; padding: 12px 22px; }
+.settings-sheet-header h2 { margin: 3px 0 0; color: #fff5e7; font: 700 1.28rem var(--font-display); }
+.settings-sheet-close { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #53606b; border-radius: 8px; color: #d9e6e5; background: #303a45; }
+.settings-sheet-close:hover { background: #3d4d58; }
+.settings-sheet-close svg { width: 18px; height: 18px; }
+.settings-sheet-body { min-height: 0; overflow: auto; padding: 18px 20px 30px; }
+.settings-sheet-sections { display: grid; gap: 14px; }
+.settings-sheet .settings-card { padding: 16px; }
+.settings-sheet .settings-card header { margin-bottom: 14px; }
+.settings-sheet .settings-card h2 { font-size: 1rem; }
+.settings-sheet .settings-source-choice { border: 0; border-top: 1px solid #414b55; border-radius: 0; padding: 12px 0 0; background: transparent; }
+.settings-sheet .settings-diagnostics > summary { min-height: 50px; padding: 10px 14px; }
+.settings-sheet .settings-diagnostics > summary svg { width: 18px; height: 18px; }
+.settings-sheet .settings-diagnostics > summary > span { text-align: right; }
+.settings-sheet .settings-history-heading h2 { font-size: 1.15rem; }
+.settings-sheet .settings-history-item { grid-template-columns: 112px minmax(0,1fr); min-height: 72px; padding: 12px; }
+.settings-privacy-copy { border-top: 1px solid #424c55; padding: 14px; color: #becbcf; font-size: .8rem; line-height: 1.55; }
+.settings-privacy-actions { padding: 0 14px 14px; }
+@keyframes sheet-enter { from { opacity: .75; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes sheet-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 760px) {
+  .settings-one-page .settings-toolbar { padding-inline: 12px; }
+  .settings-top-status, .settings-one-page .settings-quit { display: none; }
+  .settings-top-action { padding-inline: 8px; font-size: .72rem; }
+  .settings-one-page .settings-content { padding: 22px 15px; }
+  .settings-sheet-body { padding: 15px; }
+  .settings-sheet .settings-history-item { grid-template-columns: 1fr; }
+}
+@media (min-width: 641px) and (max-width: 760px) {
+  .settings-one-page .ready-primary-action { grid-template-columns: 46px minmax(0,1fr) 150px; gap: 12px; padding-inline: 14px; }
+  .settings-one-page .ready-listen-button { grid-column: auto; width: 150px; }
+  .settings-one-page .ready-source-row { grid-template-columns: 33px minmax(95px,1fr) minmax(130px,1fr) 70px; gap: 9px; }
+  .settings-one-page .ready-source-row.no-action.no-meter { grid-template-columns: 33px minmax(95px,1fr) minmax(130px,1fr); }
+  .settings-one-page .ready-source-name, .settings-one-page .ready-source-status, .settings-one-page .ready-change-button { grid-column: auto; grid-row: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .settings-sheet, .settings-sheet-backdrop { animation: none; }
+}
