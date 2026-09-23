@@ -198,14 +198,13 @@ pub fn open_settings_window(app: AppHandle) -> CommandResult<()> {
             .map_err(|e| e.to_string())?;
     }
     main.show().map_err(|e| e.to_string())?;
+    main.eval("window.location.hash = '#/settings/advanced'")
+        .map_err(|e| e.to_string())?;
     main.set_focus().map_err(|e| e.to_string())?;
     overlay.hide().map_err(|e| e.to_string())
 }
 
 pub fn show_listening_overlay(app: &AppHandle) -> CommandResult<()> {
-    // Let the user place the overlay as soon as a session opens. Once placement
-    // is finished, edit mode can be turned off to restore click-through input.
-    hotkeys::set_overlay_edit_mode(app, true).map_err(|error| error.to_string())?;
     let overlay = app
         .get_webview_window("overlay")
         .context("ไม่พบ Overlay")
@@ -213,7 +212,12 @@ pub fn show_listening_overlay(app: &AppHandle) -> CommandResult<()> {
     overlay.show().map_err(|e| e.to_string())
 }
 
-pub fn hide_main_for_session(app: &AppHandle) -> CommandResult<()> {
+pub fn hide_main_for_session(app: &AppHandle, first_start: bool) -> CommandResult<()> {
+    if first_start {
+        // Offer placement immediately for a new session. Returning from Settings
+        // keeps the user's saved click-through/edit mode instead.
+        hotkeys::set_overlay_edit_mode(app, true).map_err(|error| error.to_string())?;
+    }
     show_listening_overlay(app)?;
     let main = app
         .get_webview_window("main")
@@ -371,7 +375,7 @@ pub async fn start_session(app: AppHandle) -> CommandResult<bool> {
     if !was_listening {
         apply_listening_state(app.clone(), true).await?;
     }
-    if let Err(error) = hide_main_for_session(&app) {
+    if let Err(error) = hide_main_for_session(&app, !was_listening) {
         if !was_listening {
             let _ = apply_listening_state(app.clone(), false).await;
         }

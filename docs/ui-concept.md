@@ -4,9 +4,11 @@
 
 WANGAI should let a player choose one app, check whether audio and translation are ready, then press “เริ่มใช้งาน”. A successful start shows the Overlay and hides the control window; WANGAI remains available in the Windows system tray. Left-clicking the tray icon restores the control window, and its menu provides Stop and Quit. F8 starts or stops the same listening session. Settings and history replace the content in the same window, with a clear return command. The main view does not repeat transcript history or expose server model configuration.
 
+Opening Settings from the Overlay goes straight to the single settings view. Silence timing is entered in seconds; capture source, opacity, message count, and hotkeys appear directly without nested tabs. “กลับไป Overlay” resumes the same listening session and retains the placed position. The first session starts in placement mode, with a visible action to finish and restore click-through input.
+
 The dark theme is the default. Charcoal and blue slate carry the workspace, warm cream makes Thai copy legible, cyan identifies a live connection, and amber highlights the selected app and the primary action. Status uses words and icons as well as colour. The retro W key and warm accent borrow the character of the Mat reference. Readable text and aligned status rows take priority over maximum density.
 
-The earlier gray-green version gave all surfaces, statuses, and actions similar weight. In the revised hierarchy the selected app and session control form one command strip, with source and translation readiness below it. Both readiness rows share the same column tracks so their status icons and labels align. The start button has one line of text. A new install and the default browser preview start with no source, a clear warning, and one prominent Choose App action. A source chosen by the user is saved between launches; settings offer Clear Selection. An idle saved source says “เลือกแล้ว” until listening starts, without claiming audio capture is ready. Errors use explicit status words. History owns the transcript list; the translation status row has no link to a separate AI page.
+The earlier gray-green version gave all surfaces, statuses, and actions similar weight. In the revised hierarchy the selected app and session control form one command strip, with source and translation readiness below it. Both readiness rows share the same column tracks so their status icons and labels align. The start button has one line of text. A new install and the default browser preview start with no source, a clear warning, and one prominent Choose App action. A source chosen by the user is saved between launches; Clear Selection lives in the app picker on the main view. An idle saved source says “เลือกแล้ว” until listening starts, without claiming audio capture is ready. Errors use explicit status words. History owns the transcript list; the translation status row has no link to a separate AI page.
 
 The control window places History and Settings in the quiet top toolbar. Quit is inside Settings and the tray menu. The main heading describes the task; readiness appears once, beside the corresponding source or translation row. The selected app and Start/Stop remain in the primary strip. At the default 820×480 window, the rows have enough vertical padding for Thai text and do not require main-view scrolling. A disabled Start action is neutral gray when a required service is unavailable.
 
@@ -16,7 +18,7 @@ The control window places History and Settings in the quiet top toolbar. Quit is
 | --- | --- | --- |
 | Desktop control surface | Select an app and start or stop listening | Audio and translation readiness |
 | App picker | Find a running game or app | PID and executable path under Details |
-| Settings view | Change or clear source | Compact diagnostics, capture tuning, hotkeys, Overlay and updates in disclosures |
+| Settings view | Adjust silence timing, sound source, Overlay and hotkeys | Direct controls on one page; timing is entered in seconds, within the supported 0.25–2 second range |
 | History view | Inspect translations from this session | Replaces the main view in the same window; list scrolls when long |
 | Portable preparation | Choose a folder and prepare WANGAI | Data migration guidance |
 

@@ -33,7 +33,7 @@ pub fn handle_shortcut(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEven
             .listening;
         match pipeline::set_listening(&app_handle, listening) {
             Ok(true) => {
-                if let Err(error) = commands::hide_main_for_session(&app_handle) {
+                if let Err(error) = commands::hide_main_for_session(&app_handle, true) {
                     let _ = pipeline::set_listening(&app_handle, false);
                     emit_shortcut_error(&app_handle, error);
                 }
