@@ -26,7 +26,7 @@ vi.mock("./updates", () => ({ desktopUpdates: { available: () => false } }));
 import { SettingsApp } from "./SettingsApp";
 
 const notReady = "state not managed for field `state` on command `get_snapshot`";
-const readyRoom = () => screen.queryByRole("region", { name: /กำลังฟังและแปล|พร้อมเริ่มแปล|ยังไม่ได้เลือกแอป/ });
+const readyRoom = () => screen.queryByRole("region", { name: /กำลังแปลเสียง|แปลเสียงสด|เลือกแอปเพื่อเริ่ม/ });
 const advance = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
 
 describe("real SettingsApp bootstrap (without mocking useSnapshot)", () => {

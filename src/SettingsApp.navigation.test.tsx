@@ -44,14 +44,14 @@ describe("settings with nullable desktop audio diagnostics", () => {
     fireEvent.click(screen.getByRole("button", { name: "ตั้งค่า" }));
     expect(window.location.hash).toBe("#/settings/advanced/audio");
     expect(screen.queryByRole("dialog", { name: "ตั้งค่า" })).not.toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "กำลังฟังและแปล" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "กำลังแปลเสียง" })).toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "ตั้งค่า" })).toBeInTheDocument();
     fireEvent.click(screen.getByText("ตรวจสอบเสียงเมื่อมีปัญหา"));
     expect(await screen.findByRole("heading", { name: "Incoming audio diagnostics" })).toBeInTheDocument();
     expect(screen.getByText("ยังไม่มี audio frame")).toBeVisible();
     fireEvent.click(screen.getByText("ตัวเลือกเสียงขั้นสูง"));
     expect(screen.getByRole("slider", { name: /VAD threshold/ })).toHaveValue("0.5");
-    expect(screen.queryByRole("region", { name: "กำลังฟังและแปล" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "กำลังแปลเสียง" })).not.toBeInTheDocument();
   });
 
   it("starts the desktop session from the single-line primary action", async () => {
@@ -71,9 +71,9 @@ describe("settings with nullable desktop audio diagnostics", () => {
     expect(window.location.hash).toBe("#/settings/history");
     expect(screen.queryByRole("dialog", { name: "ประวัติคำแปล" })).not.toBeInTheDocument();
     expect(await screen.findByRole("heading", { name: "คำแปลในรอบนี้" })).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "กำลังฟังและแปล" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "กำลังแปลเสียง" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("link", { name: "กลับหน้าหลัก" }));
-    expect(await screen.findByRole("region", { name: "กำลังฟังและแปล" })).toBeInTheDocument();
+    expect(await screen.findByRole("region", { name: "กำลังแปลเสียง" })).toBeInTheDocument();
   });
 
   it.each([null, undefined, -31.25, 0])("renders Advanced with peak %s", async (peak) => {
@@ -100,11 +100,10 @@ describe("settings with nullable desktop audio diagnostics", () => {
     const view = render(<SettingsApp activeTab="overview" />);
     expect(await screen.findByRole("alert")).toHaveTextContent(message);
     expect(screen.getByText("ตัวตรวจคำพูดยังไม่พร้อม")).toBeInTheDocument();
-    expect(screen.getByText("ระบบมีข้อผิดพลาด")).toBeInTheDocument();
-    expect(document.querySelector(".settings-sidebar-dot")).toHaveClass("is-warning");
+    expect(screen.queryByText("ต้องตรวจสอบ")).not.toBeInTheDocument();
     view.rerender(<SettingsApp activeTab="advanced" advancedSection="audio" />);
     expect(screen.getByRole("alert")).toHaveTextContent(message);
-    expect(screen.queryByRole("region", { name: "กำลังฟังและแปล" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "กำลังแปลเสียง" })).not.toBeInTheDocument();
     Object.assign(snapshot.runtime, { workerReady: true, lastError: undefined });
     view.rerender(<SettingsApp activeTab="overview" />);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -114,10 +113,13 @@ describe("settings with nullable desktop audio diagnostics", () => {
   it("names an offline translation service in the session status", () => {
     const snapshot = vi.mocked(useSnapshot)().snapshot!;
     snapshot.runtime.aiService.state = "offline";
+    snapshot.runtime.aiService.message = "เชื่อมต่อบริการ AI ไม่สำเร็จ";
     snapshot.runtime.listening = false;
     render(<SettingsApp activeTab="overview" />);
-    expect(screen.getByText("บริการแปลเชื่อมต่อไม่ได้")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "ยังเริ่มแปลไม่ได้" })).toBeInTheDocument();
+    expect(screen.getByText("เชื่อมต่อไม่ได้")).toBeInTheDocument();
+    expect(screen.getByText("กำลังลองเชื่อมต่อใหม่")).toBeVisible();
+    expect(screen.getByRole("button", { name: "เริ่มใช้งาน" })).toHaveAttribute("aria-describedby", "ready-ai-status");
+    expect(screen.getByRole("heading", { name: "แปลเสียงสด" })).toBeInTheDocument();
   });
 
   it("keeps success feedback and F8 separate while opening settings", async () => {

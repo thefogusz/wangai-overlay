@@ -233,27 +233,6 @@
 .settings-one-page .ready-source-icon svg { width: 17px; height: 17px; }
 .settings-one-page .ready-privacy { margin-top: 2px; }
 .settings-one-page .ready-footer-actions { min-height: 26px; }
-.settings-control { height: 100vh; min-height: 0; overflow-y: auto; }
-.settings-control .settings-workspace { min-height: 0; }
-.settings-control .settings-content { padding: 18px 20px 20px; }
-.settings-control .ready-room-intro { padding-bottom: 9px; }
-.settings-control .ready-room-intro h2 { margin: 2px 0; font-size: 1.34rem; }
-.settings-control .ready-room-intro p:not(.eyebrow) { font-size: .8rem; }
-.settings-control .ready-primary-action { min-height: 76px; margin-bottom: 9px; padding: 10px 13px; }
-.settings-control .ready-game-mark { width: 43px; height: 43px; }
-.settings-control .ready-primary-context strong { font-size: 1.13rem; }
-.settings-control .ready-listen-button { min-height: 48px; }
-.settings-control .ready-source-row, .settings-control .ready-source-row.no-action { min-height: 48px; padding: 5px 12px; }
-.settings-control .ready-source-icon { width: 27px; height: 27px; }
-.settings-control .ready-source-icon svg { width: 15px; height: 15px; }
-.settings-control .ready-source-status small { display: none; }
-.settings-control .ready-source-name strong, .settings-control .ready-source-status strong { font-size: .76rem; }
-.settings-control .ready-source-name span { font-size: .72rem; }
-.settings-control .ready-source-row:first-child .ready-source-name span { display: none; }
-.settings-control .ready-change-button { min-height: 30px; }
-.settings-control .settings-notification { padding: 7px 12px; font-size: .76rem; }
-.settings-control .ready-room-grid { gap: 8px; }
-.settings-control .settings-content > .update-panel { margin-bottom: 8px; }
 .settings-utility { height: 100vh; min-height: 0; overflow: hidden; background: #1c222b; }
 .utility-header { display: flex; align-items: center; justify-content: space-between; min-height: 62px; border-bottom: 1px solid #3d4651; padding: 10px 20px; }
 .utility-header h1 { margin: 2px 0 0; font: 700 1.18rem var(--font-display); }
@@ -285,20 +264,23 @@
   .settings-one-page .ready-source-name, .settings-one-page .ready-source-status, .settings-one-page .ready-change-button { grid-column: auto; grid-row: auto; }
 }
 
-/* Desktop control panel: flat chrome, precise dividers, compact commands. */
+/* Desktop control panel: one clear command and two quiet readiness rows. */
 .settings-control {
   --surface: #222326;
   --line: #373a3e;
   --muted: #b1b5ba;
   --action: #e8b778;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
   color: #f3f2ee;
   background: #1b1c1f;
 }
 .settings-control .settings-toolbar {
   position: relative;
-  min-height: 54px;
+  min-height: 60px;
   border-bottom-color: #3a3c40;
-  padding: 7px 18px;
+  padding: 9px 24px;
   background: #202124;
 }
 .settings-control .settings-toolbar::before {
@@ -308,59 +290,59 @@
   background: #e8b778;
   content: "";
 }
-.settings-control .settings-top-brand .settings-brand-key { width: 29px; height: 29px; border-radius: 5px; font-size: .91rem; }
-.settings-control .settings-top-brand { font-size: .92rem; }
-.settings-control .settings-toolbar-actions { gap: 3px; }
-.settings-control .settings-top-action { min-height: 34px; border-radius: 5px; padding: 0 9px; }
+.settings-control .settings-top-brand .settings-brand-key { width: 32px; height: 32px; border-radius: 5px; font-size: .94rem; }
+.settings-control .settings-top-brand { font-size: .98rem; }
+.settings-control .settings-toolbar-actions { gap: 4px; }
+.settings-control .settings-top-action { min-height: 40px; border-radius: 5px; padding: 0 12px; font-size: .82rem; }
 .settings-control .settings-top-action svg { color: #c1c8cb; }
-.settings-control .settings-top-status { margin-right: 11px; }
-.settings-control .settings-workspace { background: #1b1c1f; }
-.settings-control .settings-content { max-width: none; padding: 15px 20px 18px; }
-.settings-control .ready-room-grid { gap: 5px; padding-top: 0; }
-.settings-control .ready-room-intro { min-height: 45px; padding: 0 0 9px; }
+.settings-control .settings-workspace { min-height: 0; max-height: calc(100vh - 60px); overflow-y: auto; background: #1b1c1f; }
+.settings-control .settings-content { max-width: none; padding: 24px 24px 20px; }
+.settings-control .settings-content > .update-panel { margin-bottom: 12px; }
+.settings-control .ready-room-grid { gap: 10px; padding-top: 0; }
+.settings-control .ready-room-intro { min-height: clamp(56px, 15vh, 66px); padding: 0 0 16px; }
 .settings-control .ready-room-intro .eyebrow { display: none; }
-.settings-control .ready-room-intro h2 { margin: 0; font: 700 1.14rem var(--font-display); }
-.settings-control .ready-room-intro p:not(.eyebrow) { display: none; }
-.settings-control .ready-summary { border: 0; border-radius: 4px; padding: 6px 9px; background: #2d3034; font-size: .74rem; }
-.settings-control .ready-summary.is-warning { color: #f0c793; background: #3b3027; }
+.settings-control .ready-room-intro h2 { margin: 0 0 3px; font: 700 1.28rem var(--font-display); }
+.settings-control .ready-room-intro p:not(.eyebrow) { display: block; color: #b9c2c6; font-size: .83rem; }
 .settings-control .ready-primary-action {
-  grid-template-columns: 36px minmax(0,1fr) auto;
-  gap: 11px;
-  min-height: 67px;
+  grid-template-columns: 42px minmax(0,1fr) 164px;
+  gap: 14px;
+  min-height: clamp(82px, 20vh, 94px);
   margin: 0;
-  border: 1px solid #3e4145;
-  border-radius: 5px 5px 0 0;
-  padding: 8px 12px;
-  background: #242629;
+  border: 1px solid #42464a;
+  border-radius: 8px 8px 0 0;
+  padding: 12px 16px;
+  background: #26282c;
 }
-.settings-control .ready-primary-action.is-empty { border-radius: 5px; }
-.settings-control .ready-game-mark { width: 34px; height: 34px; border-radius: 5px; }
-.settings-control .ready-game-mark svg { width: 17px; height: 17px; }
-.settings-control .ready-primary-context { gap: 0; }
-.settings-control .ready-primary-context small { color: #acb9bd; font-size: .7rem; }
-.settings-control .ready-primary-context strong { font-size: 1.02rem; }
+.settings-control .ready-primary-action.is-empty { border-radius: 8px; }
+.settings-control .ready-game-mark { width: 42px; height: 42px; border-radius: 7px; }
+.settings-control .ready-game-mark svg { width: 21px; height: 21px; }
+.settings-control .ready-primary-context { gap: 2px; }
+.settings-control .ready-primary-context small { color: #b9c4c7; font-size: .81rem; }
+.settings-control .ready-primary-context strong { font-size: 1.13rem; }
 .settings-control .ready-primary-context > span { display: none; }
-.settings-control .ready-listen-button { display: flex; width: 156px; min-height: 39px; align-items: center; justify-content: center; gap: 8px; border-radius: 5px; padding: 5px 10px; text-align: center; box-shadow: none; }
-.settings-control .ready-listen-button svg { width: 17px; height: 17px; flex: 0 0 17px; grid-row: auto; }
-.settings-control .ready-listen-button span { font-size: .82rem; }
+.settings-control .ready-listen-button { display: flex; width: 164px; min-height: 44px; align-items: center; justify-content: center; gap: 9px; border-radius: 6px; padding: 7px 12px; text-align: center; box-shadow: none; }
+.settings-control .ready-listen-button svg { width: 18px; height: 18px; flex: 0 0 18px; grid-row: auto; }
+.settings-control .ready-listen-button span { font-size: .87rem; }
 .settings-control .ready-listen-button small { display: none; }
-.settings-control .ready-action-hint { font-size: .72rem; }
-.settings-control .ready-source-list { border-top: 0; border-color: #3e4145; border-radius: 0 0 5px 5px; background: #202225; }
-.settings-control .ready-source-row, .settings-control .ready-source-row.no-action { min-height: 42px; border-bottom-color: #393c41; padding: 4px 11px; }
+.settings-control .ready-listen-button:disabled { opacity: 1; border-color: #55595b; color: #aeb5b7; background: #3b3e40; }
+.settings-control .ready-source-list { border-top: 0; border-color: #42464a; border-radius: 0 0 8px 8px; background: #222427; }
 .settings-control .ready-source-row,
 .settings-control .ready-source-row.no-action,
 .settings-control .ready-source-row.no-meter,
-.settings-control .ready-source-row.no-action.no-meter { grid-template-columns: 25px minmax(0, 1fr) 205px 70px; gap: 10px; }
+.settings-control .ready-source-row.no-action.no-meter { min-height: clamp(58px, 14vh, 68px); grid-template-columns: 30px minmax(0,1fr) 190px 78px; gap: 12px; border-bottom-color: #393d40; padding: 10px 16px; }
 .settings-control .ready-source-row .ready-meter-wrap { display: none; }
-.settings-control .ready-source-status { grid-column: 3; }
-.settings-control .ready-change-button { grid-column: 4; }
-.settings-control .ready-source-icon { width: 25px; height: 25px; border-radius: 5px; color: #b1d5d8; background: #2e3a3e; }
-.settings-control .ready-source-name { gap: 0; }
-.settings-control .ready-source-name strong { font-size: .74rem; }
-.settings-control .ready-source-name span { font-size: .7rem; }
-.settings-control .ready-source-status strong { font-size: .73rem; }
-.settings-control .ready-change-button { min-height: 28px; border-radius: 4px; padding: 0 8px; }
-.settings-control .settings-notification { border-radius: 5px; }
+.settings-control .ready-source-status { grid-column: 3; grid-row: auto; }
+.settings-control .ready-change-button { grid-column: 4; grid-row: auto; min-height: 36px; border-radius: 5px; padding: 0 10px; font-size: .8rem; }
+.settings-control .ready-source-icon { display: grid; width: 30px; height: 30px; border-radius: 6px; color: #b1d5d8; background: #304045; }
+.settings-control .ready-source-icon svg { width: 16px; height: 16px; }
+.settings-control .ready-source-name { grid-column: 2; gap: 2px; }
+.settings-control .ready-source-name strong { font-size: .84rem; }
+.settings-control .ready-source-name span { font-size: .78rem; }
+.settings-control .ready-source-row:first-child .ready-source-name span { display: none; }
+.settings-control .ready-source-status strong { font-size: .84rem; }
+.settings-control .ready-source-status small { display: none; }
+.settings-control .ready-source-row:last-child.tone-warning .ready-source-status small { display: block; color: #c5c8c7; font-size: .73rem; }
+.settings-control .settings-notification { border-radius: 6px; padding: 9px 12px; font-size: .83rem; }
 .settings-utility { --surface: #242629; --line: #3a3d42; color: #f3f2ee; background: #1e2024; }
 .settings-utility .utility-header { background: #202225; }
 .settings-utility .settings-card, .settings-utility .settings-diagnostics { border-radius: 6px; background: #242629; }

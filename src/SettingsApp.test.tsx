@@ -51,8 +51,7 @@ describe("single-source Ready Room", () => {
     const snapshot = snapshotFixture();
     const open = vi.fn();
     render(<ReadyRoom settings={{ ...snapshot.settings, listeningSource: undefined }} runtime={{ ...snapshot.runtime, listening: false }} previewMode={false} onToggleListening={vi.fn()} onOpenSourcePicker={open} webRuntime={false} />);
-    expect(screen.getByRole("heading", { name: "เริ่มแปลเสียง" })).toBeInTheDocument();
-    expect(screen.getByText("ต้องเลือกแหล่งเสียง")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "เลือกแอปเพื่อเริ่ม" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /เริ่มใช้งาน/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "เลือกแอปที่จะฟัง" }));
     expect(open).toHaveBeenCalledOnce();
@@ -68,7 +67,7 @@ describe("single-source Ready Room", () => {
       expect(screen.queryByText("Mistfall Hunter", { exact: true })).not.toBeInTheDocument();
     }
     view.rerender(<ReadyRoom {...props} settings={{ ...snapshot.settings, listeningSource: undefined }} />);
-    expect(screen.getByRole("heading", { name: "เริ่มแปลเสียง" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "เลือกแอปเพื่อเริ่ม" })).toBeInTheDocument();
     expect(screen.queryByText("My Custom App", { exact: true })).not.toBeInTheDocument();
   });
 
@@ -78,7 +77,7 @@ describe("single-source Ready Room", () => {
     const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: false }, previewMode: false, onToggleListening: toggle, onOpenSourcePicker: vi.fn(), webRuntime: false };
     const view = render(<ReadyRoom {...props} />);
     const start = screen.getByRole("button", { name: /เริ่มใช้งาน/ });
-    const title = screen.getByRole("heading", { name: "พร้อมเริ่มแปล" });
+    const title = screen.getByRole("heading", { name: "แปลเสียงสด" });
     expect(title.compareDocumentPosition(start) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(start);
     expect(toggle).toHaveBeenCalledOnce();
