@@ -34,33 +34,34 @@ describe("settings with nullable desktop audio diagnostics", () => {
     window.history.replaceState(null, "", "/");
   });
 
-  it("opens settings in a sheet without leaving the control surface", async () => {
+  it("replaces the control view with settings in the same window", async () => {
     render(<App />);
     expect(screen.getByRole("meter", { name: "ระดับเสียงขาเข้า" })).toHaveAttribute("aria-valuenow", "0");
     expect(screen.getByText("รอเสียงจากแอป")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "ตั้งค่า" }));
-    expect(screen.getByRole("dialog", { name: "ตั้งค่า" })).toBeInTheDocument();
+    expect(window.location.hash).toBe("#/settings/advanced/audio");
+    expect(screen.queryByRole("dialog", { name: "ตั้งค่า" })).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "กำลังฟังและแปล" })).toBeInTheDocument();
-    expect(screen.getByText("ยังไม่มี audio frame")).not.toBeVisible();
+    expect(await screen.findByRole("heading", { name: "ตั้งค่า" })).toBeInTheDocument();
     fireEvent.click(screen.getByText("ตรวจสอบเสียงเมื่อมีปัญหา"));
     expect(await screen.findByRole("heading", { name: "Incoming audio diagnostics" })).toBeInTheDocument();
     expect(screen.getByText("ยังไม่มี audio frame")).toBeVisible();
     fireEvent.click(screen.getByText("ตัวเลือกเสียงขั้นสูง"));
     expect(screen.getByRole("slider", { name: /VAD threshold/ })).toHaveValue("0.5");
-    fireEvent.click(screen.getByRole("button", { name: "ปิดแผง" }));
-    expect(screen.queryByRole("dialog", { name: "ตั้งค่า" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "กำลังฟังและแปล" })).not.toBeInTheDocument();
   });
 
-  it("opens history in a sheet and returns focus when dismissed", () => {
-    render(<SettingsApp activeTab="overview" />);
+  it("shows history in the same window without a covering dialog", async () => {
+    render(<App />);
     const history = screen.getByRole("button", { name: "ประวัติคำแปล" });
     history.focus();
     fireEvent.click(history);
-    expect(screen.getByRole("dialog", { name: "ประวัติคำแปล" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "คำแปลในรอบนี้" })).toBeInTheDocument();
-    fireEvent.keyDown(window, { key: "Escape" });
+    expect(window.location.hash).toBe("#/settings/history");
     expect(screen.queryByRole("dialog", { name: "ประวัติคำแปล" })).not.toBeInTheDocument();
-    expect(history).toHaveFocus();
+    expect(await screen.findByRole("heading", { name: "คำแปลในรอบนี้" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "กำลังฟังและแปล" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("link", { name: "กลับหน้าหลัก" }));
+    expect(await screen.findByRole("region", { name: "กำลังฟังและแปล" })).toBeInTheDocument();
   });
 
   it.each([null, undefined, -31.25, 0])("renders Advanced with peak %s", async (peak) => {
@@ -91,6 +92,7 @@ describe("settings with nullable desktop audio diagnostics", () => {
     expect(document.querySelector(".settings-sidebar-dot")).toHaveClass("is-warning");
     view.rerender(<SettingsApp activeTab="advanced" advancedSection="audio" />);
     expect(screen.getByRole("alert")).toHaveTextContent(message);
+    expect(screen.queryByRole("region", { name: "กำลังฟังและแปล" })).not.toBeInTheDocument();
     Object.assign(snapshot.runtime, { workerReady: true, lastError: undefined });
     view.rerender(<SettingsApp activeTab="overview" />);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -105,9 +107,12 @@ describe("settings with nullable desktop audio diagnostics", () => {
     expect(stop).not.toContainElement(screen.getByRole("status"));
     fireEvent.click(screen.getByRole("button", { name: "ตั้งค่า" }));
     expect(screen.getByText("เริ่มฟังแล้ว")).toBeInTheDocument();
+    expect(window.location.hash).toBe("#/settings/advanced/audio");
+    cleanup();
+    render(<SettingsApp activeTab="advanced" />);
     fireEvent.click(screen.getByText("ปุ่มลัดและ Overlay"));
     expect(screen.getByRole("heading", { name: "ปุ่มลัด" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "AI และคำศัพท์" })).not.toBeInTheDocument();
-    expect(screen.getByRole("dialog", { name: "ตั้งค่า" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "ตั้งค่า" })).not.toBeInTheDocument();
   });
 });

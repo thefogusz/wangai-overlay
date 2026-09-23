@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AudioLines, Cpu, History, KeyRound, LoaderCircle, Power, RefreshCw, Save, Settings2, SlidersHorizontal, TriangleAlert, Volume2, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { AudioLines, Cpu, History, KeyRound, LoaderCircle, Power, RefreshCw, Save, Settings2, SlidersHorizontal, TriangleAlert, Volume2 } from "lucide-react";
 import { api, type WebCompanionInfo } from "./api";
 import { ProcessPickerDialog } from "./ProcessPickerDialog";
 import { ReadyRoom } from "./ReadyRoom";
@@ -25,7 +25,6 @@ type Toast = { kind: "ok" | "error"; text: string };
 
 export function SettingsApp({ activeTab, advancedSection = "audio" }: { activeTab: SettingsTab; advancedSection?: AdvancedSection }) {
   const { snapshot, refresh, loadingError } = useSnapshot();
-  const [panel, setPanel] = useState<"history" | "settings" | null>(() => activeTab === "overview" ? null : activeTab === "history" ? "history" : "settings");
   const [devices, setDevices] = useState<AudioOutputDevice[]>([]);
   const [picker, setPicker] = useState(false);
   const runningApps = useRunningApps(picker);
@@ -35,31 +34,6 @@ export function SettingsApp({ activeTab, advancedSection = "audio" }: { activeTa
   const [hotkeys, setHotkeys] = useState<HotkeySettings>();
   const [overlay, setOverlay] = useState<OverlaySettings>();
   const [webInfo, setWebInfo] = useState<WebCompanionInfo>();
-  const sheetRef = useRef<HTMLElement>(null);
-  const closeRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => { setPanel(activeTab === "overview" ? null : activeTab === "history" ? "history" : "settings"); }, [activeTab, advancedSection]);
-  useEffect(() => {
-    if (!panel) return;
-    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    closeRef.current?.focus();
-    return () => { if (previousFocus?.isConnected) previousFocus.focus(); };
-  }, [panel]);
-  useEffect(() => {
-    if (!panel) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (picker) return;
-      if (event.key === "Escape") { event.preventDefault(); setPanel(null); }
-      if (event.key !== "Tab") return;
-      const focusable = [...(sheetRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), summary') ?? [])].filter((element) => element.getClientRects().length > 0);
-      if (!focusable.length) return;
-      const first = focusable[0], last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [panel, picker]);
 
   useEffect(() => {
     if (!snapshot) return;
@@ -96,14 +70,15 @@ export function SettingsApp({ activeTab, advancedSection = "audio" }: { activeTa
   const notice = runtime.lastError ? { kind: "error", text: runtime.lastError } : toast;
   const notification = notice && <div role={notice.kind === "error" ? "alert" : "status"} className={`settings-notification rounded-xl border px-4 py-3 text-sm ${notice.kind === "error" ? "border-red-400/30 bg-red-400/10 text-red-200" : "border-[#63c48b]/30 bg-[#63c48b]/10 text-[#8bf0b1]"}`}>{notice.text}</div>;
 
-  return <main className="settings-app settings-shell settings-one-page">
-    <header className="settings-toolbar"><div className="settings-top-brand"><span className="settings-brand-key">W</span><span>WANGAI<small>LIVE TRANSLATION</small></span></div><div className="settings-toolbar-actions"><span className="settings-top-status"><span className={`settings-sidebar-dot ${runtime.lastError || runtime.captureWarning || !settings.listeningSource ? "is-warning" : ""}`} />{!settings.listeningSource ? "ยังไม่ได้เลือกแอป" : runtime.lastError || runtime.captureWarning ? "ต้องตรวจสอบ" : runtime.listening ? "กำลังฟัง" : "พร้อมเริ่มฟัง"}</span><button aria-label="ประวัติคำแปล" className="settings-top-action" onClick={() => setPanel("history")}><History />ประวัติ</button><button aria-label="ตั้งค่า" className="settings-top-action" onClick={() => setPanel("settings")}><Settings2 />ตั้งค่า</button>{isDesktop() && <button className="settings-quit" onClick={() => void api.quitApp().catch((error) => setToast({ kind: "error", text: errorText(error) }))}><Power className="size-4" />ออกจากโปรแกรม</button>}</div></header>
-    <div className="settings-workspace"><div className="settings-content">
-    {panel !== "settings" && <UpdatePanel compact />}
-    <ReadyRoom notification={notification} settings={settings} runtime={runtime} busy={busy} previewMode={isPreviewMode()} showSecondary={false} onToggleListening={() => void run("listen", api.toggleListening, runtime.listening ? "หยุดฟังแล้ว" : "เริ่มฟังแล้ว")} onOpenSourcePicker={() => setPicker(true)} webRuntime={isWeb()} />
-    {panel && <div className="settings-sheet-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !picker) setPanel(null); }}><section aria-label={panel === "history" ? "ประวัติคำแปล" : "ตั้งค่า"} aria-modal="true" className="settings-sheet" ref={sheetRef} role="dialog"><header className="settings-sheet-header"><div><span className="settings-toolbar-eyebrow">WANGAI / {panel === "history" ? "HISTORY" : "SETTINGS"}</span><h2>{panel === "history" ? "ประวัติคำแปล" : "ตั้งค่า"}</h2></div><button aria-label="ปิดแผง" className="settings-sheet-close" onClick={() => setPanel(null)} ref={closeRef}><X /></button></header><div className="settings-sheet-body">
-    {panel === "history" && <HistoryView history={snapshot.history} />}
-    {panel === "settings" && <div className="settings-sheet-sections">
+  const showView = (kind: "history" | "settings") => {
+    window.location.hash = kind === "history" ? "#/settings/history" : "#/settings/advanced/audio";
+  };
+  const utility = activeTab !== "overview";
+  return <main className={`settings-app settings-one-page ${utility ? "settings-utility" : "settings-control"}`}>
+    {!utility && <><header className="settings-toolbar"><div className="settings-top-brand"><span className="settings-brand-key">W</span><span>WANGAI<small>LIVE TRANSLATION</small></span></div><div className="settings-toolbar-actions"><span className="settings-top-status"><span className={`settings-sidebar-dot ${runtime.lastError || runtime.captureWarning || !settings.listeningSource ? "is-warning" : ""}`} />{!settings.listeningSource ? "ยังไม่ได้เลือกแอป" : runtime.lastError || runtime.captureWarning ? "ต้องตรวจสอบ" : runtime.listening ? "กำลังฟัง" : "พร้อมเริ่มฟัง"}</span><button aria-label="ประวัติคำแปล" className="settings-top-action" onClick={() => showView("history")}><History />ประวัติ</button><button aria-label="ตั้งค่า" className="settings-top-action" onClick={() => showView("settings")}><Settings2 />ตั้งค่า</button>{isDesktop() && <button className="settings-quit" onClick={() => void api.quitApp().catch((error) => setToast({ kind: "error", text: errorText(error) }))}><Power className="size-4" />ออกจากโปรแกรม</button>}</div></header><div className="settings-workspace"><div className="settings-content"><UpdatePanel compact /><ReadyRoom notification={notification} settings={settings} runtime={runtime} busy={busy} previewMode={isPreviewMode()} showSecondary={false} onToggleListening={() => void run("listen", api.toggleListening, runtime.listening ? "หยุดฟังแล้ว" : "เริ่มฟังแล้ว")} onOpenSourcePicker={() => setPicker(true)} webRuntime={isWeb()} /></div></div></>}
+    {utility && <><header className="utility-header"><div><span className="settings-toolbar-eyebrow">WANGAI</span><h1>{activeTab === "history" ? "ประวัติคำแปล" : "ตั้งค่า"}</h1></div><a className="settings-toolbar-back" href="#/settings/overview">กลับหน้าหลัก</a></header><div className="utility-content">{notification}
+    {activeTab === "history" && <HistoryView history={snapshot.history} />}
+    {activeTab === "advanced" && <div className="utility-sections">
       <section className="space-y-4">
         <Card title="แอปที่ฟัง" icon={<AudioLines />} subtitle="เลือกเกมหรือแอปหนึ่งตัวสำหรับแปลเสียง"><div className="settings-source-choice"><div><small>{settings.listeningSource ? "แอปที่เลือก" : "แหล่งเสียง"}</small><strong>{settings.listeningSource?.displayName ?? "ยังไม่ได้เลือกแอป"}</strong></div><div className="settings-source-actions"><button className={button} onClick={() => setPicker(true)}>{settings.listeningSource ? "เปลี่ยนแอป" : "เลือกแอป"}</button>{settings.listeningSource && <button className={button} disabled={busy === "clear-source" || isPreviewMode()} onClick={() => void run("clear-source", api.clearListeningSource, "ล้างแหล่งเสียงแล้ว")}>ล้างการเลือก</button>}</div></div></Card>
         <details className="settings-diagnostics"><summary><Volume2 />ตรวจสอบเสียงเมื่อมีปัญหา<span>ดูสถานะและเครื่องมือวินิจฉัย</span></summary><Card title="Incoming audio diagnostics" icon={<Volume2 />} subtitle="มี capture, ring, cursor, VAD และ AI queue เพียงชุดเดียว">
@@ -123,9 +98,8 @@ export function SettingsApp({ activeTab, advancedSection = "audio" }: { activeTa
       <details className="settings-diagnostics settings-controls" open={activeTab === "advanced" && advancedSection === "controls" ? true : undefined}><summary><KeyRound />ปุ่มลัดและ Overlay<span>ปรับเมื่อต้องการ</span></summary><div className="settings-tuning-content"><Card title="ปุ่มลัด" icon={<KeyRound />} subtitle="ควบคุมการฟังและ Overlay ระหว่างเล่นเกม"><div className="grid gap-3 md:grid-cols-2">{Object.entries(hotkeys).map(([key, value]) => <label className="settings-hotkey-label text-sm" key={key}>{hotkeyLabels[key as keyof HotkeySettings]}<input className={`${input} mt-1`} value={value} onChange={(event) => setHotkeys({ ...hotkeys, [key]: event.target.value })} /></label>)}</div><button className={`${primary} mt-4`} onClick={() => void run("hotkeys", () => api.updateHotkeys(hotkeys), "บันทึกปุ่มลัดแล้ว")}>บันทึกปุ่มลัด</button></Card><Card title="Overlay" icon={<SlidersHorizontal />} subtitle="ตั้งค่าหน้าต่างคำแปลในเกม"><div className="grid gap-5 md:grid-cols-2"><Slider label="ความทึบของ Overlay" min={0.2} max={1} step={0.05} value={overlay.opacity} display={`${Math.round(overlay.opacity * 100)}%`} onChange={(value) => setOverlay({ ...overlay, opacity: value })} /><Slider label="จำนวนข้อความ" min={1} max={5} step={1} value={overlay.maxItems} display={`${overlay.maxItems}`} onChange={(value) => setOverlay({ ...overlay, maxItems: value })} /></div><button className={`${primary} mt-4`} onClick={() => void run("overlay", () => api.updateOverlay(overlay), "บันทึก Overlay แล้ว")}>บันทึก Overlay</button></Card><UpdatePanel /></div></details>
       <details className="settings-diagnostics"><summary>ข้อมูลโปรแกรมและความเป็นส่วนตัว</summary><p className="settings-privacy-copy">ส่งเฉพาะช่วงคำพูดและข้อความผ่านเซิร์ฟเวอร์ WANGAI ไปยัง AI provider ไม่บันทึกเนื้อหาบนเซิร์ฟเวอร์ เก็บสถิติการใช้งานด้วยรหัสติดตั้งแบบสุ่ม</p>{isDesktop() && <div className="settings-privacy-actions"><button className={button} title={webInfo?.origin} onClick={() => void run("web", api.openWebCompanion, "เปิด Web App แล้ว")}>เปิด Web Companion</button></div>}</details>
     </div>}
-    </div></section></div>}
+    </div></>}
     {picker && <ProcessPickerDialog apps={runningApps.apps} loading={runningApps.loading} error={runningApps.error} previewMode={isPreviewMode()} selected={settings.listeningSource} onClose={() => setPicker(false)} onRefresh={runningApps.refresh} onSelect={async (source) => { await api.selectListeningSource(source); await refresh(); setToast({ kind: "ok", text: `เลือก ${source.displayName} แล้ว` }); setPicker(false); }} />}
-    </div></div>
   </main>;
 }
 
