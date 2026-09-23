@@ -6,7 +6,7 @@ WANGAI should let a player choose one app, check whether audio and translation a
 
 The dark theme is the default. Charcoal and blue slate carry the workspace, warm cream makes Thai copy legible, cyan identifies a live connection, and amber highlights the selected app and the primary action. Status uses words and icons as well as colour. The retro W key and warm accent borrow the character of the Mat reference; dense navigation and compact status rows follow desktop tools.
 
-The earlier gray-green version gave all surfaces, statuses, and actions similar weight. In the revised hierarchy the selected app and session control form one command strip, with source and translation readiness below it. Setup offers one prominent Choose App action. Error states say “ต้องตรวจสอบ” in the summary and sidebar. History owns the transcript list; the translation status row has no link to a separate AI page.
+The earlier gray-green version gave all surfaces, statuses, and actions similar weight. In the revised hierarchy the selected app and session control form one command strip, with source and translation readiness below it. A new install and the default browser preview start with no source, a clear warning, and one prominent Choose App action. A source chosen by the user is saved between launches; Audio and App settings offer Clear Selection. An idle saved source says “เลือกแล้ว” until listening starts, without claiming audio capture is ready. Error states say “ต้องตรวจสอบ” in the summary and sidebar. History owns the transcript list; the translation status row has no link to a separate AI page.
 
 ## Screens
 

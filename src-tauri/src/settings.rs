@@ -336,6 +336,43 @@ mod tests {
     use super::*;
 
     #[test]
+    fn new_install_starts_without_a_game_or_hidden_game_terms() {
+        let temp = tempfile::tempdir().unwrap();
+        let manager = SettingsManager::load(temp.path().join("settings.json")).unwrap();
+        let settings = manager.snapshot();
+        assert!(settings.listening_source.is_none());
+        assert!(settings.glossary.is_empty());
+    }
+
+    #[test]
+    fn clearing_source_preserves_other_settings() {
+        let temp = tempfile::tempdir().unwrap();
+        let path = temp.path().join("settings.json");
+        let manager = SettingsManager::load(path.clone()).unwrap();
+        let before = manager.snapshot();
+        manager.update(|settings| {
+            settings.listening_source = Some(crate::models::SavedProcess {
+                executable_path: "C:/Games/example.exe".into(),
+                executable_name: "example.exe".into(),
+                display_name: "Example".into(),
+                last_pid: None,
+            });
+            Ok(())
+        })
+        .unwrap();
+        manager
+            .update(|settings| {
+                settings.listening_source = None;
+                Ok(())
+            })
+            .unwrap();
+        let after = SettingsManager::load(path).unwrap().snapshot();
+        assert!(after.listening_source.is_none());
+        assert_eq!(after.installation_id, before.installation_id);
+        assert_eq!(after.hotkeys, before.hotkeys);
+    }
+
+    #[test]
     fn portable_import_validates_without_changing_source_or_id() {
         let temp=tempfile::tempdir().unwrap();let path=temp.path().join("settings.json");
         let manager=SettingsManager::load(path.clone()).unwrap();

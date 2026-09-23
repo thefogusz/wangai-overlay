@@ -286,24 +286,7 @@ impl Default for AppSettings {
             overlay: OverlaySettings::default(),
             vad: VadSettings::default(),
             installation_id: uuid::Uuid::new_v4().to_string(),
-            glossary: vec![
-                GlossaryTerm {
-                    source: "Mistfall".into(),
-                    target: "Mistfall".into(),
-                },
-                GlossaryTerm {
-                    source: "extract".into(),
-                    target: "จุดถอนตัว".into(),
-                },
-                GlossaryTerm {
-                    source: "revive".into(),
-                    target: "ชุบเพื่อน".into(),
-                },
-                GlossaryTerm {
-                    source: "boss".into(),
-                    target: "บอส".into(),
-                },
-            ],
+            glossary: Vec::new(),
         }
     }
 }

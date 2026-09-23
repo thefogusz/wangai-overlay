@@ -94,6 +94,9 @@ export const api = {
   selectListeningSource: (source: CaptureSource) => tauriRuntime
     ? invoke<AppSettings>("select_listening_source", { source })
     : webCommand<AppSettings>("select_listening_source", { source }),
+  clearListeningSource: () => tauriRuntime
+    ? invoke<AppSettings>("clear_listening_source")
+    : webCommand<AppSettings>("clear_listening_source"),
   toggleListening: () => tauriRuntime
     ? invoke<boolean>("toggle_listening")
     : webCommand<boolean>("toggle_listening"),

@@ -66,7 +66,19 @@ export function previewSnapshot(): AppSnapshot {
   if (state === "ready") { snapshot.runtime.listening = false; snapshot.runtime.statusMessage = "พร้อมเริ่มฟัง"; }
   if (state === "idle") { snapshot.runtime.listening = false; snapshot.runtime.attachedSource = undefined; snapshot.runtime.audioRmsDbfs = null; snapshot.runtime.audioPeakDbfs = null; snapshot.runtime.audioLastSeenAtMs = null; snapshot.history = []; }
   if (state === "warning") { snapshot.runtime.captureWarning = "ยังไม่ได้รับ audio frame จากแอปที่เลือก"; snapshot.runtime.audioPeakDbfs = null; }
-  if (state === "setup") { snapshot.settings.listeningSource = undefined; snapshot.runtime.aiService = { ...snapshot.runtime.aiService, state: "offline", message: "เชื่อมต่อบริการ AI ไม่สำเร็จ" }; snapshot.runtime.listening = false; snapshot.runtime.attachedSource = undefined; snapshot.runtime.audioPeakDbfs = null; snapshot.history = []; }
+  if (!state || state === "setup") {
+    snapshot.settings.listeningSource = undefined;
+    snapshot.runtime.listening = false;
+    snapshot.runtime.attachedSource = undefined;
+    snapshot.runtime.effectiveCapturePid = undefined;
+    snapshot.runtime.effectiveCaptureName = undefined;
+    snapshot.runtime.audioRmsDbfs = null;
+    snapshot.runtime.audioPeakDbfs = null;
+    snapshot.runtime.audioLastSeenAtMs = null;
+    snapshot.runtime.statusMessage = "ยังไม่ได้เลือกแหล่งเสียง";
+    snapshot.history = [];
+  }
+  if (state === "setup") snapshot.runtime.aiService = { ...snapshot.runtime.aiService, state: "offline", message: "เชื่อมต่อบริการ AI ไม่สำเร็จ" };
   if (state === "long-text") {
     const name = "LongApplicationNameWithoutSpaces".repeat(8);
     snapshot.settings.listeningSource!.displayName = name;

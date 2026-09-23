@@ -385,6 +385,7 @@ pub enum WebCommand {
     ToggleListening,
     SetListening { enabled: bool },
     SelectListeningSource { source: CaptureSource },
+    ClearListeningSource,
     UpdateOutputDevice { device_id: Option<String> },
     UpdateRescueScan { enabled: bool },
     ProbeRecentAudio,

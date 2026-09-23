@@ -60,6 +60,16 @@ describe("settings with nullable desktop audio diagnostics", () => {
     expect(await screen.findByText(peak == null ? "ยังไม่มี audio frame" : `${peak.toFixed(1)} dBFS`)).toBeInTheDocument();
   });
 
+  it("offers a clear action only when an app is saved", () => {
+    const snapshot = vi.mocked(useSnapshot)().snapshot!;
+    const view = render(<SettingsApp activeTab="advanced" advancedSection="audio" />);
+    expect(screen.getByRole("button", { name: "ล้างการเลือก" })).toBeInTheDocument();
+    snapshot.settings.listeningSource = undefined;
+    view.rerender(<SettingsApp activeTab="advanced" advancedSection="audio" />);
+    expect(screen.queryByRole("button", { name: "ล้างการเลือก" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "เลือกแอป" })).toBeInTheDocument();
+  });
+
   it("shows a worker protocol failure on Ready Room and Advanced instead of only a success notice", async () => {
     const snapshot = vi.mocked(useSnapshot)().snapshot!;
     const message = "ข้อมูลจากตัวตรวจคำพูดไม่ตรงกับแอป กรุณาเปิด WANGAI จากชุด Portable เดียวกัน";

@@ -146,6 +146,7 @@ pub fn run() {
             commands::open_settings_window,
             commands::quit_app,
             commands::select_listening_source,
+            commands::clear_listening_source,
             commands::update_capture_mode,
             commands::update_output_device,
             commands::update_rescue_scan,

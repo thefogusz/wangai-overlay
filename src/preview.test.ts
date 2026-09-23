@@ -9,6 +9,13 @@ describe("v14 preview fixtures", () => {
     expect(snapshot.settings.listeningSource?.displayName).toBe("Mistfall Hunter");
     expect(snapshot.history[0].stream).toBe("incoming");
   });
+  it("shows no selected game in the default preview", () => {
+    window.history.replaceState(null, "", "/?preview=1");
+    const snapshot = previewSnapshot();
+    expect(snapshot.settings.listeningSource).toBeUndefined();
+    expect(snapshot.runtime.listening).toBe(false);
+    expect(snapshot.runtime.statusMessage).toBe("ยังไม่ได้เลือกแหล่งเสียง");
+  });
   it("exposes visual stress states only in explicit preview mode", () => {
     window.history.replaceState(null, "", "/?ui=long-error");
     expect(previewNotification()).toBeUndefined();

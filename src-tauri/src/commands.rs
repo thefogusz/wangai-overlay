@@ -69,6 +69,10 @@ pub async fn dispatch_web_command(
             let settings = select_listening_source(app.clone(), source).await?;
             serde_json::to_value(settings).map_err(|error| error.to_string())?
         }
+        WebCommand::ClearListeningSource => {
+            let settings = clear_listening_source(app.clone()).await?;
+            serde_json::to_value(settings).map_err(|error| error.to_string())?
+        }
         WebCommand::UpdateCaptureMode { mode } => {
             let settings = update_capture_mode_inner(app, &state, mode)?;
             serde_json::to_value(settings).map_err(|error| error.to_string())?
@@ -238,6 +242,29 @@ pub async fn select_listening_source(
             })
             .map_err(|error| error.to_string())?;
         reattach_if_listening(&app, &state)?;
+        Ok(settings)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn clear_listening_source(app: AppHandle) -> CommandResult<AppSettings> {
+    tauri::async_runtime::spawn_blocking(move || {
+        pipeline::set_listening(&app, false).map_err(|error| error.to_string())?;
+        let state = app.state::<AppState>();
+        let settings = state
+            .settings
+            .update(|settings| {
+                settings.listening_source = None;
+                Ok(())
+            })
+            .map_err(|error| error.to_string())?;
+        let _ = app.emit("settings-updated", settings.clone());
+        let runtime = state.update_runtime(|runtime| {
+            runtime.status_message = "ยังไม่ได้เลือกแหล่งเสียง".into();
+        });
+        let _ = app.emit("runtime-state", runtime);
         Ok(settings)
     })
     .await

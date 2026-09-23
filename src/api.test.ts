@@ -23,4 +23,11 @@ describe("Web Companion single-source transport", () => {
     await api.selectListeningSource({ pid: 1, name: "chrome.exe", displayName: "Google Chrome", executablePath: "C:\\chrome.exe", isMistfall: false });
     expect(JSON.parse(String(fetch.mock.calls[0]?.[1]?.body))).toMatchObject({ command: "select_listening_source" });
   });
+
+  it("can clear a previously saved listening source", async () => {
+    const fetch = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response(JSON.stringify({ listeningSource: null }), { status: 200, headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", fetch);
+    await api.clearListeningSource();
+    expect(JSON.parse(String(fetch.mock.calls[0]?.[1]?.body))).toMatchObject({ command: "clear_listening_source" });
+  });
 });
