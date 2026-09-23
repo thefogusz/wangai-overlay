@@ -64,22 +64,27 @@ export function ProcessPickerDialog({ apps, selected, loading, error, previewMod
   return <div className="process-dialog-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <div aria-labelledby="process-dialog-title" aria-modal="true" className="process-dialog" ref={dialogRef} role="dialog">
       <header><div><span><Globe2 /></span><div><p>แอปที่กำลังเปิดอยู่บนเครื่อง</p><h2 id="process-dialog-title">เลือกแอปที่จะฟัง</h2></div></div><button aria-label="ปิดหน้าต่างเลือกแอป" onClick={onClose}><X /></button></header>
-      <div className="process-dialog-hint" id="process-dialog-hint"><Info aria-hidden="true" /><div><strong>เปิดเกมหรือแอปก่อน แล้วกลับมาเลือกที่นี่</strong><p>แสดงเฉพาะแอปที่กำลังเปิดอยู่ ไอคอนบน Desktop อย่างเดียวยังไม่ปรากฏในรายการ</p></div></div>
-      <div className="process-dialog-search"><Search /><input aria-label="ค้นหาแอปที่จะฟัง" aria-describedby="process-dialog-hint" placeholder="ค้นหาชื่อแอปที่เปิดอยู่ หรือชื่อไฟล์ .exe" ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} /><button aria-label="รีเฟรชรายการแอป" disabled={loading} onClick={onRefresh}><RefreshCw className={loading ? "animate-spin" : ""} /></button></div>
-      <p className="process-dialog-status" role="status">{loading ? "กำลังตรวจหาแอป…" : choices.length + " แอป · รวม process ย่อยแล้ว"}</p>
+      <div className="process-dialog-hint" id="process-dialog-hint"><Info aria-hidden="true" /><div><strong>เลือกเกมหรือแอปที่ต้องการแปลเสียง</strong><p>หากไม่พบ ให้เปิดแอปนั้นก่อนแล้วกดรีเฟรช</p></div></div>
+      <div className="process-dialog-search"><Search /><input aria-label="ค้นหาแอปที่จะฟัง" aria-describedby="process-dialog-hint" placeholder="ค้นหาชื่อเกมหรือแอป" ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} /><button aria-label="รีเฟรชรายการแอป" disabled={loading} onClick={onRefresh}><RefreshCw className={loading ? "animate-spin" : ""} /></button></div>
+      <p className="process-dialog-status" role="status">{loading ? "กำลังตรวจหาแอป…" : `พบ ${choices.length} แอป`}</p>
       {(error || selectionError) && <p className="process-dialog-error" role="alert">{selectionError ?? error}</p>}
       <div className="process-dialog-list" aria-busy={loading} ref={listRef}>
         {choices.map((app) => {
           const checked = isSelectedApp(app, selected);
           const multiple = app.roots.length > 1;
           const duplicateName = apps.some((other) => other.id !== app.id && other.displayName === app.displayName);
+          const open = expanded === app.id;
+          const detailsId = `process-details-${app.id}`;
           return <div className="process-app-group" key={app.id}>
-            <button aria-pressed={checked} aria-expanded={multiple ? expanded === app.id : undefined} className={checked ? "is-selected" : ""} disabled={selecting !== undefined || (previewMode && !multiple)} onClick={() => multiple ? setExpanded(expanded === app.id ? undefined : app.id) : app.roots[0] && void select(app.roots[0])}>
-              <span className="process-choice-icon"><Monitor /></span><span><strong>{app.displayName}</strong><small>{app.executableName} · {app.processCount} processes{multiple ? " · " + app.roots.length + " instances" : ""}</small>{duplicateName && <small>{app.executablePath}</small>}</span>
+            <button aria-label={multiple ? `เลือกหน้าต่างของ ${app.displayName}` : `เลือก ${app.displayName}`} aria-pressed={multiple ? undefined : checked} aria-expanded={multiple ? open : undefined} aria-controls={multiple && open ? detailsId : undefined} className={checked ? "is-selected" : ""} disabled={selecting !== undefined || (previewMode && !multiple)} onClick={() => multiple ? setExpanded(open ? undefined : app.id) : app.roots[0] && void select(app.roots[0])}>
+              <span className="process-choice-icon"><Monitor /></span><span><strong>{app.displayName}</strong><small>{checked ? "เลือกอยู่ · " : ""}{multiple ? "เลือกหน้าต่างที่จะฟัง" : "เลือกแอปนี้"}{duplicateName ? ` · ${app.executableName}` : ""}</small></span>
               {selecting !== undefined && app.roots.some((root) => root.pid === selecting) ? <LoaderCircle className="animate-spin" /> : checked ? <Check /> : multiple ? <ChevronDown /> : null}
             </button>
-            <button className="process-details-toggle" aria-label={"รายละเอียด " + app.displayName} aria-expanded={expanded === app.id} onClick={() => setExpanded(expanded === app.id ? undefined : app.id)}>รายละเอียด</button>
-            {expanded === app.id && <div className="process-app-details"><p>{app.executablePath || "Windows ไม่อนุญาตให้อ่านตำแหน่งไฟล์"}</p>{app.roots.map((root) => <div key={root.pid}><span>{root.name} · PID {root.pid}</span>{multiple && <button disabled={previewMode || selecting !== undefined} onClick={() => void select(root)}>เลือก instance {root.pid}</button>}</div>)}</div>}
+            {!multiple && <button className="process-details-toggle" aria-label={`รายละเอียด ${app.displayName}`} aria-expanded={open} aria-controls={open ? detailsId : undefined} onClick={() => setExpanded(open ? undefined : app.id)}>รายละเอียด</button>}
+            {open && <div className="process-app-details" id={detailsId}>
+              <p>{app.executablePath || "Windows ไม่อนุญาตให้อ่านตำแหน่งไฟล์"}</p>
+              {app.roots.map((root, index) => <div key={root.pid}><span>{root.name} · PID {root.pid}</span>{multiple && <button disabled={previewMode || selecting !== undefined} onClick={() => void select(root)}>{`เลือกหน้าต่าง ${index + 1}`}</button>}</div>)}
+            </div>}
           </div>;
         })}
         {!loading && choices.length === 0 && <div className="process-dialog-empty"><strong>{query.trim() ? "ไม่พบแอปที่ตรงกับคำค้น" : "ยังไม่พบแอปที่เปิดอยู่"}</strong><p>เปิดเกมหรือแอปให้ถึงหน้าหลัก แล้วกดรีเฟรชรายการด้านบน</p>{query.trim() && <p>ถ้าเปิดอยู่แล้ว ลองค้นด้วยชื่อสั้น ๆ เช่น Hell หรือ Discord</p>}</div>}

@@ -10,10 +10,15 @@ unsafe fn SendMessageW(hwnd:HWND,msg:u32,wparam:WPARAM,lparam:LPARAM)->LRESULT {
     windows::Win32::UI::WindowsAndMessaging::SendMessageW(hwnd,msg,Some(wparam),Some(lparam))
 }
 
-const BG:COLORREF=COLORREF(0x00181614);
-const GREEN:COLORREF=COLORREF(0x00a0dd76);
+// COLORREF stores colors as 0x00bbggrr.
+const BG:COLORREF=COLORREF(0x00ebf3f6);
+const INK:COLORREF=COLORREF(0x00293223);
+const MUTED:COLORREF=COLORREF(0x00606b6b);
+const FOREST:COLORREF=COLORREF(0x00364328);
+const BORDER:COLORREF=COLORREF(0x00c3d0d6);
+const FIELD:COLORREF=COLORREF(0x00f7fcff);
 struct View {
-    task:Task,root:PathBuf,children:Vec<HWND>,font:HFONT,heading:HFONT,brush:HBRUSH,
+    task:Task,root:PathBuf,children:Vec<HWND>,font:HFONT,heading:HFONT,brush:HBRUSH,field_brush:HBRUSH,
     receiver:Option<mpsc::Receiver<Progress>>,cancel:Arc<AtomicBool>,busy:bool,cancellable:bool,dpi:u32,
 }
 pub fn error(message:&str) { error_owned(None,message); }
@@ -28,7 +33,7 @@ pub fn run(task:Task,root:PathBuf) -> Result<()> { unsafe {
     let wc=WNDCLASSW{lpfnWndProc:Some(procedure),hInstance:instance.into(),lpszClassName:class,hbrBackground:brush,hCursor:LoadCursorW(None,IDC_ARROW)?,hIcon:LoadIconW(Some(instance.into()),PCWSTR(1usize as *const u16)).unwrap_or_default(),..Default::default()};
     RegisterClassW(&wc);
     let dpi=GetDpiForSystem();
-    let mut view=Box::new(View{task,root,children:vec![],font:HFONT::default(),heading:HFONT::default(),brush,receiver:None,cancel:Arc::new(AtomicBool::new(false)),busy:false,cancellable:true,dpi});
+    let mut view=Box::new(View{task,root,children:vec![],font:HFONT::default(),heading:HFONT::default(),brush,field_brush:CreateSolidBrush(FIELD),receiver:None,cancel:Arc::new(AtomicBool::new(false)),busy:false,cancellable:true,dpi});
     let hwnd=CreateWindowExW(WS_EX_CONTROLPARENT,class,w!("WANGAI Portable"),WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX|WS_CLIPCHILDREN,
         CW_USEDEFAULT,CW_USEDEFAULT,740*dpi as i32/96,510*dpi as i32/96,None,None,Some(instance.into()),None)?;
     SetWindowLongPtrW(hwnd,GWLP_USERDATA,&mut *view as *mut View as isize);
@@ -37,14 +42,14 @@ pub fn run(task:Task,root:PathBuf) -> Result<()> { unsafe {
         Ok(child)
     };
     view.children=vec![
-        control(w!("STATIC"),"WANGAI   /   PORTABLE",10,WINDOW_STYLE(0))?,
-        control(w!("STATIC"),"พร้อมใช้ในโฟลเดอร์ของคุณ — ไม่ต้องติดตั้ง",11,WINDOW_STYLE(0))?,
-        control(w!("STATIC"),"&ตำแหน่งโฟลเดอร์ WANGAI",12,WINDOW_STYLE(0))?,
+        control(w!("STATIC"),"WANGAI",10,WINDOW_STYLE(0))?,
+        control(w!("STATIC"),"เตรียมโปรแกรมไว้ในโฟลเดอร์ของคุณ แล้วเริ่มใช้งานได้เลย",11,WINDOW_STYLE(0))?,
+        control(w!("STATIC"),"&ตำแหน่งจัดเก็บ",12,WINDOW_STYLE(0))?,
         control(w!("EDIT"),&view.root.to_string_lossy(),13,WS_TABSTOP|WS_BORDER|WINDOW_STYLE(ES_AUTOHSCROLL as u32))?,
-        control(w!("BUTTON"),"เปลี่ยน&โฟลเดอร์…",14,WS_TABSTOP|WINDOW_STYLE(BS_OWNERDRAW as u32))?,
-        control(w!("BUTTON"),"นำการตั้งค่าเดิมมาใช้ (&I) · ไม่แก้หรือลบต้นฉบับ",15,WS_TABSTOP|WINDOW_STYLE(BS_AUTOCHECKBOX as u32))?,
-        control(w!("STATIC"),"ไม่เลือกนำเข้า = เริ่มใหม่ · ถ้า Portable มีข้อมูลแล้ว จะใช้ข้อมูลนั้นเสมอ",16,WINDOW_STYLE(0))?,
-        control(w!("STATIC"),"ครั้งถัดไปเปิด WANGAI.exe ในโฟลเดอร์นี้ · ย้ายทั้งโฟลเดอร์พร้อม Data",17,WINDOW_STYLE(0))?,
+        control(w!("BUTTON"),"เลือก&โฟลเดอร์…",14,WS_TABSTOP|WINDOW_STYLE(BS_OWNERDRAW as u32))?,
+        control(w!("BUTTON"),"นำการตั้งค่าเดิมมาใช้ (&I)",15,WS_TABSTOP|WINDOW_STYLE(BS_AUTOCHECKBOX as u32))?,
+        control(w!("STATIC"),"ไม่เลือก = เริ่มใหม่ · การตั้งค่าเดิมจะไม่ถูกแก้ไขหรือลบ",16,WINDOW_STYLE(0))?,
+        control(w!("STATIC"),"ครั้งถัดไปเปิด WANGAI.exe ที่นี่ · หากย้ายโปรแกรม ให้ย้ายทั้งโฟลเดอร์พร้อม Data",17,WINDOW_STYLE(0))?,
         control(PROGRESS_CLASSW,"",18,WINDOW_STYLE(0))?,
         control(w!("BUTTON"),"เตรียมและเปิด WANGAI (&S)",19,WS_TABSTOP|WINDOW_STYLE(BS_OWNERDRAW as u32))?,
         control(w!("BUTTON"),"ยกเลิก (&C)",20,WS_TABSTOP|WINDOW_STYLE(BS_OWNERDRAW as u32))?,
@@ -53,8 +58,8 @@ pub fn run(task:Task,root:PathBuf) -> Result<()> { unsafe {
     let _=SetWindowTheme(view.children[5],w!(""),w!(""));
     let _=SetWindowTheme(view.children[8],w!(""),w!(""));
     SendMessageW(view.children[8],PBM_SETRANGE32,WPARAM(0),LPARAM(100));
-    SendMessageW(view.children[8],PBM_SETBKCOLOR,WPARAM(0),LPARAM(0x0033302a));
-    SendMessageW(view.children[8],PBM_SETBARCOLOR,WPARAM(0),LPARAM(GREEN.0 as isize));
+    SendMessageW(view.children[8],PBM_SETBKCOLOR,WPARAM(0),LPARAM(BORDER.0 as isize));
+    SendMessageW(view.children[8],PBM_SETBARCOLOR,WPARAM(0),LPARAM(FOREST.0 as isize));
     layout(hwnd,&mut view);
     if !matches!(view.task,Task::Prepare(_)) {
         for index in 2..7 { let _=ShowWindow(view.children[index],SW_HIDE); }
@@ -67,16 +72,16 @@ pub fn run(task:Task,root:PathBuf) -> Result<()> { unsafe {
     while GetMessageW(&mut message,None,0,0).as_bool() {
         if !IsDialogMessageW(hwnd,&message).as_bool() { let _=TranslateMessage(&message); DispatchMessageW(&message); }
     }
-    let _=DeleteObject(view.font.into());let _=DeleteObject(view.heading.into()); let _=DeleteObject(view.brush.into()); CoUninitialize();
+    let _=DeleteObject(view.font.into());let _=DeleteObject(view.heading.into()); let _=DeleteObject(view.brush.into()); let _=DeleteObject(view.field_brush.into()); CoUninitialize();
     Ok(())
 } }
 unsafe fn layout(hwnd:HWND,view:&mut View) {
     let scale=|n:i32| n*view.dpi as i32/96;
     if !view.font.is_invalid() { let _=DeleteObject(view.font.into()); }
     if !view.heading.is_invalid() {let _=DeleteObject(view.heading.into());}
-    view.font=CreateFontW(-scale(17),0,0,0,400,0,0,0,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH.0 as u32,w!("Segoe UI"));
-    view.heading=CreateFontW(-scale(28),0,0,0,700,0,0,0,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH.0 as u32,w!("Segoe UI"));
-    let positions=[(30,25,660,35),(30,67,660,30),(30,118,660,28),(30,149,490,36),(535,149,160,36),(30,206,660,30),(30,243,660,35),(30,287,665,61),(30,355,665,15),(30,395,465,42),(515,395,180,42)];
+    view.font=CreateFontW(-scale(16),0,0,0,400,0,0,0,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH.0 as u32,w!("Segoe UI"));
+    view.heading=CreateFontW(-scale(34),0,0,0,700,0,0,0,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH.0 as u32,w!("Segoe UI"));
+    let positions=[(38,27,650,49),(38,80,650,30),(38,132,650,26),(38,166,478,40),(532,166,162,40),(38,232,650,30),(38,266,650,30),(38,307,656,50),(38,372,656,10),(38,405,460,48),(516,405,178,48)];
     for (child,(x,y,w,h)) in view.children.iter().zip(positions) {
         SendMessageW(*child,WM_SETFONT,WPARAM(view.font.0 as usize),LPARAM(1));
         let _=MoveWindow(*child,scale(x),scale(y),scale(w),scale(h),true);
@@ -132,7 +137,7 @@ unsafe extern "system" fn procedure(hwnd:HWND,message:u32,wparam:WPARAM,lparam:L
                             let _=wangai_portable::atomic_json(&view.root.join("Data/portable-test-error.json"),&serde_json::json!({"error":error}));
                             let _=DestroyWindow(hwnd);continue;
                         }
-                        let _=SetWindowTextW(view.children[7],w!("ยังไม่สำเร็จ — ดูข้อความผิดพลาดแล้วลองใหม่ หรือปิดหน้าต่างนี้"));
+                        let _=SetWindowTextW(view.children[7],w!("ยังไม่สำเร็จ · อ่านรายละเอียดแล้วลองอีกครั้ง ข้อมูลใน Data ยังอยู่"));
                         for index in [3,4,5,9,10] { let _=EnableWindow(view.children[index],true); }
                         error_owned(Some(hwnd),&error);
                     }
@@ -143,15 +148,18 @@ unsafe extern "system" fn procedure(hwnd:HWND,message:u32,wparam:WPARAM,lparam:L
         WM_DESTROY=>PostQuitMessage(0),
         WM_CTLCOLORSTATIC|WM_CTLCOLOREDIT|WM_CTLCOLORBTN=>{
             let dc=HDC(wparam.0 as *mut _);let id=GetDlgCtrlID(HWND(lparam.0 as *mut _));
-            SetTextColor(dc,if id==10 {GREEN} else {COLORREF(0x00dfdfdf)});SetBkColor(dc,BG);return LRESULT(view.brush.0 as isize);
+            SetTextColor(dc,if id==10 || id==12 {INK} else {MUTED});
+            if message==WM_CTLCOLOREDIT { SetBkColor(dc,FIELD);return LRESULT(view.field_brush.0 as isize); }
+            SetBkColor(dc,BG);return LRESULT(view.brush.0 as isize);
         }
         WM_DRAWITEM=>{
             let item=&*(lparam.0 as *const DRAWITEMSTRUCT);
             let saved=SaveDC(item.hDC);
-            let green=item.CtlID==19 && item.itemState.0 & ODS_DISABLED.0==0;
-            let brush=CreateSolidBrush(if green {GREEN} else {COLORREF(0x0033302a)});
+            let primary=item.CtlID==19 && item.itemState.0 & ODS_DISABLED.0==0;
+            let brush=CreateSolidBrush(if primary {FOREST} else {FIELD});
             FillRect(item.hDC,&item.rcItem,brush);let _=DeleteObject(brush.into());
-            SetBkMode(item.hDC,TRANSPARENT);SetTextColor(item.hDC,if green {BG} else {GREEN});
+            if !primary { let border=CreateSolidBrush(BORDER);FrameRect(item.hDC,&item.rcItem,border);let _=DeleteObject(border.into()); }
+            SetBkMode(item.hDC,TRANSPARENT);SetTextColor(item.hDC,if primary {FIELD} else {INK});
             SelectObject(item.hDC,view.font.into());
             let mut text=vec![0u16;256];let len=GetWindowTextW(item.hwndItem,&mut text);let mut rect=item.rcItem;
             DrawTextW(item.hDC,&mut text[..len as usize],&mut rect,DT_CENTER|DT_VCENTER|DT_SINGLELINE);

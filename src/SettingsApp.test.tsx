@@ -57,14 +57,14 @@ describe("single-source Ready Room", () => {
     expect(screen.queryByText("My Custom App", { exact: true })).not.toBeInTheDocument();
   });
 
-  it("keeps the listening action before the card with or without a notification", () => {
+  it("keeps the listening action prominent after the heading with or without a notification", () => {
     const snapshot = snapshotFixture();
     const toggle = vi.fn();
     const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: false }, history: [], previewMode: false, onToggleListening: toggle, onOpenSourcePicker: vi.fn(), webRuntime: false };
     const view = render(<ReadyRoom {...props} />);
     const start = screen.getByRole("button", { name: /เริ่มฟัง · F8/ });
-    const title = screen.getByRole("heading", { name: /เลือกแอปหนึ่งตัว/ });
-    expect(start.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const title = screen.getByRole("heading", { name: "พร้อมฟังแล้ว" });
+    expect(title.compareDocumentPosition(start) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(start);
     expect(toggle).toHaveBeenCalledOnce();
     view.rerender(<ReadyRoom {...props} notification={<div role="alert">{"ข้อความยาว".repeat(100)}</div>} />);

@@ -13,8 +13,19 @@ describe("grouped running app picker", () => {
     const p = props(); render(<ProcessPickerDialog {...p} />);
     expect(screen.getAllByText("Discord")).toHaveLength(1);
     expect(screen.queryByText("แนะนำ")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Discord.exe · 6 processes/ }));
+    expect(screen.queryByText(/PID 7210/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "เลือก Discord" }));
     await waitFor(() => expect(p.onSelect).toHaveBeenCalledWith(p.apps[0].roots[0]));
+  });
+
+  it("keeps technical process details behind one disclosure", () => {
+    const p = props(); render(<ProcessPickerDialog {...p} />);
+    const details = screen.getByRole("button", { name: "รายละเอียด Discord" });
+    expect(details).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(details);
+    expect(details).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText(/PID 7210/)).toBeInTheDocument();
+    expect(screen.getByText(p.apps[0].executablePath)).toBeInTheDocument();
   });
 
   it("searches metadata and executable aliases beyond the former 40 row limit", () => {
@@ -38,7 +49,8 @@ describe("grouped running app picker", () => {
     fireEvent.change(search, { target: { value: "discord" } });
     view.rerender(<ProcessPickerDialog {...p} selected={selected} loading onClose={vi.fn()} />);
     expect(search).toHaveFocus(); expect(search).toHaveValue("discord");
-    expect(screen.getByRole("button", { name: /Discord.exe · 6 processes/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "เลือก Discord" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText(/เลือกอยู่ · เลือกแอปนี้/)).toBeInTheDocument();
   });
 
   it("returns to the top when changing or clearing a search in a long list", () => {
@@ -76,16 +88,17 @@ describe("grouped running app picker", () => {
   it("requires choosing an instance when multiple independent roots exist", async () => {
     const p = props(); p.apps[0].roots = [p.apps[0].roots[0], { ...p.apps[0].roots[0], pid: 8123 }];
     render(<ProcessPickerDialog {...p} />);
-    fireEvent.click(screen.getByRole("button", { name: /Discord.exe · 6 processes/ }));
+    fireEvent.click(screen.getByRole("button", { name: "เลือกหน้าต่างของ Discord" }));
     expect(p.onSelect).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "เลือก instance 8123" }));
+    expect(screen.queryByRole("button", { name: "รายละเอียด Discord" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "เลือกหน้าต่าง 2" }));
     await waitFor(() => expect(p.onSelect).toHaveBeenCalledWith(p.apps[0].roots[1]));
   });
 
   it("keeps the picker open and displays a stale selection error", async () => {
     const p = props(); p.onSelect.mockRejectedValue(new Error("แอปปิดแล้ว"));
     render(<ProcessPickerDialog {...p} />);
-    fireEvent.click(screen.getByRole("button", { name: /Discord.exe · 6 processes/ }));
+    fireEvent.click(screen.getByRole("button", { name: "เลือก Discord" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("แอปปิดแล้ว");
     expect(p.onClose).not.toHaveBeenCalled();
   });

@@ -37,17 +37,20 @@ describe("settings with nullable desktop audio diagnostics", () => {
   it("opens Advanced from Ready Room before any audio frames arrive", async () => {
     render(<App />);
     expect(screen.getByRole("meter", { name: "ระดับเสียงขาเข้า" })).toHaveAttribute("aria-valuenow", "0");
-    expect(screen.getByText("ยังไม่มี audio frame")).toBeInTheDocument();
+    expect(screen.getByText("รอเสียงจากแอป")).toBeInTheDocument();
     const link = screen.getByRole("link", { name: "การตั้งค่าขั้นสูง" });
     fireEvent.click(link);
     await act(async () => {
       window.location.hash = link.getAttribute("href")!;
       window.dispatchEvent(new HashChangeEvent("hashchange"));
     });
+    expect(screen.getByText("ยังไม่มี audio frame")).not.toBeVisible();
+    fireEvent.click(screen.getByText("ตรวจสอบเสียงเมื่อมีปัญหา"));
     expect(await screen.findByRole("heading", { name: "Incoming audio diagnostics" })).toBeInTheDocument();
-    expect(screen.getByText("ยังไม่มี audio frame")).toBeInTheDocument();
+    expect(screen.getByText("ยังไม่มี audio frame")).toBeVisible();
+    fireEvent.click(screen.getByText("ตัวเลือกเสียงขั้นสูง"));
     expect(screen.getByRole("slider", { name: /VAD threshold/ })).toHaveValue("0.5");
-    expect(screen.getByRole("link", { name: "กลับ Ready Room" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "กลับหน้าหลัก" })).toBeInTheDocument();
   });
 
   it.each([null, undefined, -31.25, 0])("renders Advanced with peak %s", async (peak) => {
@@ -64,7 +67,7 @@ describe("settings with nullable desktop audio diagnostics", () => {
     const view = render(<SettingsApp activeTab="overview" />);
     expect(await screen.findByRole("alert")).toHaveTextContent(message);
     expect(screen.getByText("ตัวตรวจคำพูดยังไม่พร้อม")).toBeInTheDocument();
-    expect(screen.getByText("ต้องตรวจสอบ")).toBeInTheDocument();
+    expect(screen.getByText("ต้องตั้งค่า")).toBeInTheDocument();
     view.rerender(<SettingsApp activeTab="advanced" advancedSection="audio" />);
     expect(screen.getByRole("alert")).toHaveTextContent(message);
     Object.assign(snapshot.runtime, { workerReady: true, lastError: undefined });
@@ -85,6 +88,6 @@ describe("settings with nullable desktop audio diagnostics", () => {
     expect(screen.queryByLabelText("Groq API key")).not.toBeInTheDocument();
     expect(screen.getByText("ใช้บริการกลาง ไม่ต้องใส่ API key หรือเลือกโมเดลเอง")).toBeInTheDocument();
     expect(screen.getByText("server-configured-model")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "AI & Terms" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "AI และคำศัพท์" })).toHaveAttribute("aria-current", "page");
   });
 });

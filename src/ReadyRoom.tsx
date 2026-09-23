@@ -1,4 +1,4 @@
-import { AudioLines, Check, ChevronRight, Cloud, Globe2, Headphones, History, LoaderCircle, LockKeyhole, MessageSquareText, Radio, Settings, ShieldCheck, TriangleAlert } from "lucide-react";
+import { AudioLines, Check, ChevronRight, Cloud, Globe2, Headphones, History, LoaderCircle, MessageSquareText, Radio, Settings, ShieldCheck, TriangleAlert } from "lucide-react";
 import { advancedHref, settingsHref } from "./router";
 import type { AppSettings, RuntimeState, SubtitleItem } from "./types";
 import { useEffect, type ReactNode } from "react";
@@ -31,19 +31,17 @@ export function ReadyRoom({ settings, runtime, history, busy, previewMode, onTog
   const configured = Boolean(settings.listeningSource) && runtime.workerReady && ["connected", "ready"].includes(runtime.aiService.state);
   const recent = history.find((item) => item.status === "success") ?? history[0];
   return <div className="ready-room-grid">
-    <div className="ready-listen-toolbar">
-      <div className="ready-notification-slot">{notification}</div>
-      <button className={`ready-listen-button ${runtime.listening ? "is-listening" : ""}`} disabled={busy === "listen" || previewMode || (!runtime.listening && !configured)} onClick={onToggleListening}>{busy === "listen" ? <LoaderCircle className="animate-spin" /> : runtime.listening ? <AudioLines /> : <Headphones />}<span>{runtime.listening ? "หยุดฟัง · F8" : "เริ่มฟัง · F8"}</span><small title={settings.listeningSource?.displayName}>{runtime.listening ? `กำลังฟัง ${settings.captureMode === "system_output" ? "MIXED" : settings.listeningSource?.displayName ?? "แอปที่เลือก"}` : "พร้อมแปลเสียงขาเข้า"}</small></button>
-    </div>
+    {notification && <div className="ready-notification-slot">{notification}</div>}
     <section className="ready-room-panel" aria-labelledby="ready-room-title">
-      <div className="ready-room-intro"><div><p className="eyebrow">READY ROOM</p><h2 id="ready-room-title">{configured ? "พร้อมแล้ว — เลือกแอปหนึ่งตัวแล้วเริ่มฟัง" : "ตั้งค่าอีกนิด แล้วเริ่มฟังได้เลย"}</h2><p>WANGAI ฟังแอปที่คุณเลือกครั้งละหนึ่งโปรแกรม ไม่มีเสียงซ้ำจากแหล่งอื่น</p></div><span className={`ready-summary ${configured ? "is-ready" : "is-warning"}`}>{configured ? <Check /> : <TriangleAlert />}{configured ? "พร้อมใช้งาน" : "ต้องตรวจสอบ"}</span></div>
+      <div className="ready-room-intro"><div><p className="eyebrow">READY ROOM</p><h2 id="ready-room-title">{runtime.listening ? "กำลังฟังและแปลให้คุณ" : configured ? "พร้อมฟังแล้ว" : "เริ่มจากเลือกแอปที่ต้องการฟัง"}</h2><p>เลือกเกมหรือแอปหนึ่งตัว แล้วคำแปลจะปรากฏบน Overlay ระหว่างเล่น</p></div><span className={`ready-summary ${configured ? "is-ready" : "is-warning"}`}>{configured ? <Check /> : <TriangleAlert />}{configured ? "พร้อมใช้งาน" : "ต้องตั้งค่า"}</span></div>
+      <div className="ready-primary-action"><button className={`ready-listen-button ${runtime.listening ? "is-listening" : ""}`} disabled={busy === "listen" || previewMode || (!runtime.listening && !configured)} onClick={onToggleListening}>{busy === "listen" ? <LoaderCircle className="animate-spin" /> : runtime.listening ? <AudioLines /> : <Headphones />}<span>{runtime.listening ? "หยุดฟัง · F8" : "เริ่มฟัง · F8"}</span><small title={settings.listeningSource?.displayName}>{runtime.listening ? `กำลังฟัง ${settings.captureMode === "system_output" ? "MIXED" : settings.listeningSource?.displayName ?? "แอปที่เลือก"}` : configured ? `ฟัง ${settings.listeningSource?.displayName}` : "เลือกแอปด้านล่างเพื่อเริ่มต้น"}</small></button>{!configured && <div className="ready-action-hint"><strong>{!settings.listeningSource ? "เลือกแอปเพื่อเริ่ม" : !runtime.workerReady ? "กำลังเตรียมระบบเสียง" : "กำลังเชื่อมต่อบริการแปล"}</strong><span>{!settings.listeningSource ? "เลือกเกม Discord หรือเบราว์เซอร์ที่ต้องการฟัง" : runtime.lastError ?? "สถานะจะอัปเดตอัตโนมัติเมื่อพร้อม"}</span>{!settings.listeningSource && <button onClick={onOpenSourcePicker}>เลือกแอป <ChevronRight /></button>}</div>}</div>
       <div className="ready-source-list">
         <Row action="เปลี่ยน" icon={<Radio />} index={1} meterLabel="ระดับเสียงขาเข้า" meterValue={runtime.audioPeakDbfs} name={settings.listeningSource?.displayName ?? "ยังไม่ได้เลือกแอป"} onAction={onOpenSourcePicker} readiness={incoming} title="แหล่งเสียงที่ฟัง" />
-        <Row action="ข้อมูล" actionHref={advancedHref("ai")} icon={<Cloud />} index={2} meterLabel="โมเดลและ API key" meterText="จัดการบนเซิร์ฟเวอร์" name="บริการ AI กลาง" readiness={ai} title="การแปล" />
+        <Row action="ข้อมูล" actionHref={advancedHref("ai")} icon={<Cloud />} index={2} meterLabel="บริการแปล" meterText="พร้อมแปลอัตโนมัติ" name="บริการ AI กลาง" readiness={ai} title="การแปล" />
       </div>
-      <div className="ready-privacy"><ShieldCheck /><div><strong>วางใจเรื่องความเป็นส่วนตัว</strong><span>ส่งเฉพาะช่วงคำพูดและข้อความผ่านเซิร์ฟเวอร์ WANGAI ไปยัง AI provider ไม่บันทึกเนื้อหาบนเซิร์ฟเวอร์ เก็บสถิติการใช้งานด้วยรหัสติดตั้งแบบสุ่ม</span></div><LockKeyhole /></div>
       <section className="ready-recent" aria-labelledby="recent-title"><div className="ready-section-heading"><div><p className="eyebrow">LIVE MEMORY</p><h2 id="recent-title">บทสนทนาล่าสุด</h2></div><a href={settingsHref("history")}>ดูทั้งหมด <ChevronRight /></a></div>{recent ? <Recent item={recent} /> : <div className="ready-empty"><MessageSquareText /><div><strong>ยังไม่มีบทสนทนา</strong><span>ข้อความแรกจะปรากฏที่นี่เมื่อเริ่มฟัง</span></div></div>}</section>
     </section>
+    <details className="ready-privacy"><summary><ShieldCheck />ความเป็นส่วนตัวและการส่งข้อมูล <ChevronRight /></summary><p>ส่งเฉพาะช่วงคำพูดและข้อความผ่านเซิร์ฟเวอร์ WANGAI ไปยัง AI provider ไม่บันทึกเนื้อหาบนเซิร์ฟเวอร์ เก็บสถิติการใช้งานด้วยรหัสติดตั้งแบบสุ่ม</p></details>
     <div className="ready-footer-actions"><a href={settingsHref("history")}><History />ประวัติ</a><a href={advancedHref("audio")}><Settings />การตั้งค่าขั้นสูง</a>{!webRuntime && onOpenWebCompanion && <button title={webCompanionOrigin} onClick={onOpenWebCompanion}><Globe2 />เปิด Web App</button>}{webRuntime && <span><Globe2 />Web Companion · เชื่อมต่อ Desktop</span>}{previewMode && <span>ข้อมูลจำลองสำหรับ Browser Preview</span>}</div>
   </div>;
 }
@@ -64,9 +62,9 @@ function incomingReadiness(settings: AppSettings, runtime: RuntimeState): Readin
   if (!runtime.listening) return { label: "พร้อม", detail: "รอเริ่มฟัง", tone: "ready" };
   if (runtime.captureWarning) return { label: "ไม่ได้ยินเสียง", detail: "เปิดวิธีแก้ปัญหาเสียง", tone: "warning" };
   if (!runtime.attachedSource) return { label: "หาแอปไม่พบ", detail: `ตรวจว่า ${settings.listeningSource.displayName} ยังเปิดอยู่`, tone: "warning" };
-  if (runtime.audioLastSeenAtMs == null) return { label: "ยังไม่มี audio frame", detail: "กำลังเชื่อมต่อแหล่งเสียง", tone: "waiting" };
-  if ((runtime.audioPeakDbfs ?? -96) <= -90) return { label: "Digital silence", detail: "แอปยังไม่มีเสียงออก", tone: "warning" };
-  if (!runtime.vadActive) return { label: "กำลังฟัง", detail: settings.captureMode === "system_output" ? "รับเสียง MIXED · VAD ยังไม่พบคำพูด" : "VAD ยังไม่พบคำพูด", tone: "waiting" };
+  if (runtime.audioLastSeenAtMs == null) return { label: "รอเสียงจากแอป", detail: "กำลังเชื่อมต่อแหล่งเสียง", tone: "waiting" };
+  if ((runtime.audioPeakDbfs ?? -96) <= -90) return { label: "ยังไม่ได้ยินเสียง", detail: "ตรวจว่าแอปกำลังเล่นเสียง", tone: "warning" };
+  if (!runtime.vadActive) return { label: "กำลังฟัง", detail: settings.captureMode === "system_output" ? "รอคำพูดจากเสียงรวม" : "รอคำพูดจากแอป", tone: "waiting" };
   return { label: "กำลังตรวจพบคำพูด", detail: settings.captureMode === "system_output" ? "แหล่งข้อความจะแสดง MIXED" : `รับเสียงจาก ${settings.listeningSource.displayName}`, tone: "ready" };
 }
 function aiReadiness(runtime: RuntimeState): Readiness {
