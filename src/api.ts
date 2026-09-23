@@ -100,6 +100,9 @@ export const api = {
   toggleListening: () => tauriRuntime
     ? invoke<boolean>("toggle_listening")
     : webCommand<boolean>("toggle_listening"),
+  startSession: () => tauriRuntime
+    ? invoke<boolean>("start_session")
+    : webCommand<boolean>("set_listening", { enabled: true }),
   setListening: (enabled: boolean) => tauriRuntime
     ? invoke<boolean>("set_listening", { enabled })
     : webCommand<boolean>("set_listening", { enabled }),

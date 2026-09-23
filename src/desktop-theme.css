@@ -340,13 +340,20 @@
 .settings-control .ready-primary-context small { color: #acb9bd; font-size: .7rem; }
 .settings-control .ready-primary-context strong { font-size: 1.02rem; }
 .settings-control .ready-primary-context > span { display: none; }
-.settings-control .ready-listen-button { width: 156px; min-height: 39px; border-radius: 5px; padding: 5px 10px; box-shadow: none; }
-.settings-control .ready-listen-button svg { width: 17px; height: 17px; }
+.settings-control .ready-listen-button { display: flex; width: 156px; min-height: 39px; align-items: center; justify-content: center; gap: 8px; border-radius: 5px; padding: 5px 10px; text-align: center; box-shadow: none; }
+.settings-control .ready-listen-button svg { width: 17px; height: 17px; flex: 0 0 17px; grid-row: auto; }
 .settings-control .ready-listen-button span { font-size: .82rem; }
 .settings-control .ready-listen-button small { display: none; }
 .settings-control .ready-action-hint { font-size: .72rem; }
 .settings-control .ready-source-list { border-top: 0; border-color: #3e4145; border-radius: 0 0 5px 5px; background: #202225; }
 .settings-control .ready-source-row, .settings-control .ready-source-row.no-action { min-height: 42px; border-bottom-color: #393c41; padding: 4px 11px; }
+.settings-control .ready-source-row,
+.settings-control .ready-source-row.no-action,
+.settings-control .ready-source-row.no-meter,
+.settings-control .ready-source-row.no-action.no-meter { grid-template-columns: 25px minmax(0, 1fr) 205px 70px; gap: 10px; }
+.settings-control .ready-source-row .ready-meter-wrap { display: none; }
+.settings-control .ready-source-status { grid-column: 3; }
+.settings-control .ready-change-button { grid-column: 4; }
 .settings-control .ready-source-icon { width: 25px; height: 25px; border-radius: 5px; color: #b1d5d8; background: #2e3a3e; }
 .settings-control .ready-source-name { gap: 0; }
 .settings-control .ready-source-name strong { font-size: .74rem; }

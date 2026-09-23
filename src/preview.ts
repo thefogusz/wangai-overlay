@@ -7,7 +7,7 @@ export function isPreviewMode(): boolean { return typeof window !== "undefined" 
 export function previewNotification(): { kind: "ok" | "error"; text: string } | undefined {
   if (!isPreviewMode()) return undefined;
   const ui = new URLSearchParams(window.location.search).get("ui");
-  if (ui === "success") return { kind: "ok", text: "เริ่มฟังแล้ว" };
+  if (ui === "success") return { kind: "ok", text: "เริ่มใช้งานแล้ว" };
   if (ui === "error") return { kind: "error", text: "เริ่มฟังไม่สำเร็จ กรุณาตรวจการตั้งค่าเสียง" };
   if (ui === "long-error") return { kind: "error", text: "ไม่สามารถเชื่อมต่อแอปที่เลือกได้ กรุณาเปิดแอปแล้วลองใหม่อีกครั้ง: C:\\Applications\\" + "LongApplicationNameWithoutSpaces".repeat(8) + ".exe" };
   return undefined;

@@ -14,6 +14,7 @@ mod release_test;
 mod settings;
 mod startup;
 mod state;
+mod tray;
 mod translator;
 mod updater;
 mod web_companion;
@@ -75,6 +76,7 @@ pub fn run() {
 
             // Configured webviews must not invoke commands before state exists.
             startup::create_windows(app.handle())?;
+            tray::create_tray(app.handle())?;
             #[cfg(feature = "release-test")]
             release_test::checkpoint(app.handle(), "windows-created");
             portable_runtime::start_readiness_monitor(app.handle().clone());
@@ -151,6 +153,7 @@ pub fn run() {
             commands::update_output_device,
             commands::update_rescue_scan,
             commands::toggle_listening,
+            commands::start_session,
             commands::set_listening,
             commands::probe_recent_audio,
             commands::update_hotkeys,

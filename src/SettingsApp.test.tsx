@@ -11,9 +11,9 @@ describe("single-source Ready Room", () => {
     const props = { settings: snapshot.settings, runtime: snapshot.runtime, previewMode: false, onToggleListening: vi.fn(), onOpenSourcePicker: vi.fn(), webRuntime: false };
     const view = render(<ReadyRoom {...props} />);
     expect(screen.getByText("สถานะจาก gateway")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /หยุดฟัง · F8/ })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /หยุดใช้งาน/ })).toBeEnabled();
     view.rerender(<ReadyRoom {...props} runtime={{ ...snapshot.runtime, listening: false }} />);
-    expect(screen.getByRole("button", { name: /เริ่มฟัง · F8/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /เริ่มใช้งาน/ })).toBeDisabled();
     expect(screen.queryByText(/งบ Groq/)).not.toBeInTheDocument();
   });
 
@@ -21,9 +21,9 @@ describe("single-source Ready Room", () => {
     const snapshot = snapshotFixture();
     const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: false }, previewMode: false, onToggleListening: vi.fn(), onOpenSourcePicker: vi.fn(), webRuntime: true };
     const view = render(<ReadyRoom {...props} runtime={{ ...props.runtime, aiService: { ...props.runtime.aiService, state: "offline" } }} />);
-    expect(screen.getByRole("button", { name: /เริ่มฟัง · F8/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /เริ่มใช้งาน/ })).toBeDisabled();
     view.rerender(<ReadyRoom {...props} />);
-    expect(screen.getByRole("button", { name: /เริ่มฟัง · F8/ })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /เริ่มใช้งาน/ })).toBeEnabled();
     expect(screen.queryByRole("textbox", { name: /key/i })).not.toBeInTheDocument();
   });
   it("shows only the listening source and translation rows", () => {
@@ -53,7 +53,7 @@ describe("single-source Ready Room", () => {
     render(<ReadyRoom settings={{ ...snapshot.settings, listeningSource: undefined }} runtime={{ ...snapshot.runtime, listening: false }} previewMode={false} onToggleListening={vi.fn()} onOpenSourcePicker={open} webRuntime={false} />);
     expect(screen.getByRole("heading", { name: "เริ่มแปลเสียง" })).toBeInTheDocument();
     expect(screen.getByText("ต้องเลือกแหล่งเสียง")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /เริ่มฟัง · F8/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /เริ่มใช้งาน/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "เลือกแอปที่จะฟัง" }));
     expect(open).toHaveBeenCalledOnce();
   });
@@ -77,14 +77,14 @@ describe("single-source Ready Room", () => {
     const toggle = vi.fn();
     const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: false }, previewMode: false, onToggleListening: toggle, onOpenSourcePicker: vi.fn(), webRuntime: false };
     const view = render(<ReadyRoom {...props} />);
-    const start = screen.getByRole("button", { name: /เริ่มฟัง · F8/ });
+    const start = screen.getByRole("button", { name: /เริ่มใช้งาน/ });
     const title = screen.getByRole("heading", { name: "พร้อมเริ่มแปล" });
     expect(title.compareDocumentPosition(start) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(start);
     expect(toggle).toHaveBeenCalledOnce();
     view.rerender(<ReadyRoom {...props} notification={<div role="alert">{"ข้อความยาว".repeat(100)}</div>} />);
     expect(screen.getByRole("alert")).toBeVisible();
-    expect(screen.getByRole("button", { name: /เริ่มฟัง · F8/ })).toBe(start);
+    expect(screen.getByRole("button", { name: /เริ่มใช้งาน/ })).toBe(start);
     expect(start).toBeEnabled();
   });
 
@@ -93,9 +93,9 @@ describe("single-source Ready Room", () => {
     const toggle = vi.fn();
     const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: true }, previewMode: false, onToggleListening: toggle, onOpenSourcePicker: vi.fn(), webRuntime: false };
     const view = render(<ReadyRoom {...props} busy="listen" />);
-    expect(screen.getByRole("button", { name: /หยุดฟัง · F8/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /หยุดใช้งาน/ })).toBeDisabled();
     view.rerender(<ReadyRoom {...props} />);
-    fireEvent.click(screen.getByRole("button", { name: /หยุดฟัง · F8/ }));
+    fireEvent.click(screen.getByRole("button", { name: /หยุดใช้งาน/ }));
     expect(toggle).toHaveBeenCalledOnce();
   });
 });

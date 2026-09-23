@@ -4,6 +4,7 @@ import { App } from "./App";
 import { SettingsApp } from "./SettingsApp";
 import { snapshotFixture } from "./test/fixtures";
 import { useSnapshot } from "./useSnapshot";
+import { api } from "./api";
 
 vi.mock("./useSnapshot", () => ({
   useSnapshot: vi.fn(),
@@ -13,6 +14,8 @@ vi.mock("./api", () => ({
   api: {
     listRunningApps: vi.fn().mockResolvedValue([]),
     listOutputDevices: vi.fn().mockResolvedValue([]),
+    startSession: vi.fn().mockResolvedValue(true),
+    toggleListening: vi.fn().mockResolvedValue(false),
   },
 }));
 
@@ -49,6 +52,15 @@ describe("settings with nullable desktop audio diagnostics", () => {
     fireEvent.click(screen.getByText("ตัวเลือกเสียงขั้นสูง"));
     expect(screen.getByRole("slider", { name: /VAD threshold/ })).toHaveValue("0.5");
     expect(screen.queryByRole("region", { name: "กำลังฟังและแปล" })).not.toBeInTheDocument();
+  });
+
+  it("starts the desktop session from the single-line primary action", async () => {
+    const snapshot = vi.mocked(useSnapshot)().snapshot!;
+    snapshot.runtime.listening = false;
+    render(<SettingsApp activeTab="overview" />);
+    fireEvent.click(screen.getByRole("button", { name: "เริ่มใช้งาน" }));
+    expect(api.startSession).toHaveBeenCalledOnce();
+    expect(await screen.findByText("เริ่มใช้งานแล้ว")).toBeInTheDocument();
   });
 
   it("shows history in the same window without a covering dialog", async () => {
@@ -102,11 +114,11 @@ describe("settings with nullable desktop audio diagnostics", () => {
   it("keeps success feedback and F8 separate while opening settings", async () => {
     window.history.replaceState(null, "", "/?preview=1&ui=success#/settings/overview");
     render(<SettingsApp activeTab="overview" />);
-    expect(await screen.findByRole("status")).toHaveTextContent("เริ่มฟังแล้ว");
-    const stop = screen.getByRole("button", { name: /หยุดฟัง · F8/ });
+    expect(await screen.findByRole("status")).toHaveTextContent("เริ่มใช้งานแล้ว");
+    const stop = screen.getByRole("button", { name: /หยุดใช้งาน/ });
     expect(stop).not.toContainElement(screen.getByRole("status"));
     fireEvent.click(screen.getByRole("button", { name: "ตั้งค่า" }));
-    expect(screen.getByText("เริ่มฟังแล้ว")).toBeInTheDocument();
+    expect(screen.getByText("เริ่มใช้งานแล้ว")).toBeInTheDocument();
     expect(window.location.hash).toBe("#/settings/advanced/audio");
     cleanup();
     render(<SettingsApp activeTab="advanced" />);

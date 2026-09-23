@@ -210,6 +210,15 @@ pub fn show_listening_overlay(app: &AppHandle) -> CommandResult<()> {
     overlay.show().map_err(|e| e.to_string())
 }
 
+pub fn hide_main_for_session(app: &AppHandle) -> CommandResult<()> {
+    show_listening_overlay(app)?;
+    let main = app
+        .get_webview_window("main")
+        .context("ไม่พบหน้าต่าง WANGAI")
+        .map_err(|error| error.to_string())?;
+    main.hide().map_err(|error| error.to_string())
+}
+
 fn centered_settings_position(
     size: PhysicalSize<u32>,
     origin: PhysicalPosition<i32>,
@@ -351,6 +360,21 @@ pub async fn toggle_listening(app: AppHandle) -> CommandResult<bool> {
         listening_toggle_target(&state)
     };
     apply_listening_state(app, enabled).await
+}
+
+#[tauri::command]
+pub async fn start_session(app: AppHandle) -> CommandResult<bool> {
+    let was_listening = runtime_is_listening(&app.state::<AppState>());
+    if !was_listening {
+        apply_listening_state(app.clone(), true).await?;
+    }
+    if let Err(error) = hide_main_for_session(&app) {
+        if !was_listening {
+            let _ = apply_listening_state(app.clone(), false).await;
+        }
+        return Err(error);
+    }
+    Ok(true)
 }
 
 #[tauri::command]

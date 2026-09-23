@@ -3,7 +3,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_clipboard_manager::ClipboardExt;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutEvent, ShortcutState};
 
-use crate::{models::HotkeySettings, pipeline, state::AppState};
+use crate::{commands, models::HotkeySettings, pipeline, state::AppState};
 
 pub fn handle_shortcut(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEvent) {
     let app_handle = app.clone();
@@ -31,8 +31,15 @@ pub fn handle_shortcut(app: &AppHandle, shortcut: &Shortcut, event: ShortcutEven
             .read()
             .expect("runtime lock poisoned")
             .listening;
-        if let Err(error) = pipeline::set_listening(&app_handle, listening) {
-            emit_shortcut_error(&app_handle, error.to_string());
+        match pipeline::set_listening(&app_handle, listening) {
+            Ok(true) => {
+                if let Err(error) = commands::hide_main_for_session(&app_handle) {
+                    let _ = pipeline::set_listening(&app_handle, false);
+                    emit_shortcut_error(&app_handle, error);
+                }
+            }
+            Ok(false) => {}
+            Err(error) => emit_shortcut_error(&app_handle, error.to_string()),
         }
     } else if shortcut_matches(shortcut, &hotkeys.copy_latest) {
         let _ = copy_latest(&app_handle);
