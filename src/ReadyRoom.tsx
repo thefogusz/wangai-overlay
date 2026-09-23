@@ -29,11 +29,11 @@ export function ReadyRoom({ settings, runtime, busy, previewMode, onToggleListen
   const ai = aiReadiness(runtime);
   const configured = Boolean(settings.listeningSource) && runtime.workerReady && ["connected", "ready"].includes(runtime.aiService.state);
   const needsSource = !settings.listeningSource;
-  const needsAttention = Boolean(runtime.lastError || runtime.captureWarning) || !runtime.workerReady || ["offline", "degraded"].includes(runtime.aiService.state);
+  const summary = sessionSummary(settings, runtime);
   return <div className="ready-room-grid">
     {notification && <div className="ready-notification-slot">{notification}</div>}
     <section className="ready-room-panel" aria-labelledby="ready-room-title">
-      <div className="ready-room-intro"><div><p className="eyebrow">WANGAI LIVE</p><h2 id="ready-room-title">{needsSource ? "เริ่มแปลเสียง" : runtime.listening ? "กำลังฟังและแปล" : "พร้อมเริ่มแปล"}</h2><p>{needsSource ? "เลือกแอปที่ต้องการฟังก่อนเริ่มแปลเสียง" : "คำแปลจะขึ้นบน Overlay ระหว่างที่คุณเล่นเกม"}</p></div><span className={`ready-summary ${needsSource || needsAttention ? "is-warning" : runtime.listening ? "is-live" : "is-ready"}`}>{needsSource || needsAttention ? <TriangleAlert /> : runtime.listening ? <AudioLines /> : <Check />}{needsSource ? "ต้องเลือกแหล่งเสียง" : needsAttention ? "ต้องตรวจสอบ" : runtime.listening ? "กำลังทำงาน" : "พร้อมเริ่มฟัง"}</span></div>
+      <div className="ready-room-intro"><div><p className="eyebrow">WANGAI LIVE</p><h2 id="ready-room-title">{needsSource ? "เริ่มแปลเสียง" : runtime.listening ? "กำลังฟังและแปล" : summary.tone === "warning" ? "ยังเริ่มแปลไม่ได้" : "พร้อมเริ่มแปล"}</h2><p>{needsSource ? "เลือกแอปที่ต้องการฟังก่อนเริ่มแปลเสียง" : "คำแปลจะขึ้นบน Overlay ระหว่างที่คุณเล่นเกม"}</p></div><span className={`ready-summary is-${summary.tone}`}>{summary.tone === "warning" ? <TriangleAlert /> : runtime.listening ? <AudioLines /> : <Check />}{summary.label}</span></div>
       <div className={`ready-primary-action ${needsSource ? "is-empty" : ""}`}><span className="ready-game-mark" aria-hidden="true"><Headphones /></span><div className="ready-primary-context"><small>{needsSource ? "แหล่งเสียง" : runtime.listening ? "แอปที่กำลังฟัง" : "แอปที่เลือก"}</small><strong>{settings.listeningSource?.displayName ?? "ยังไม่ได้เลือกแอป"}</strong><span>{runtime.listening ? "ฟังเสียงอยู่ · แปลเป็นไทยแบบสด" : configured ? "กด F8 เพื่อเชื่อมต่อเสียงจากแอป" : needsSource ? "เลือกเกมหรือแอปที่ต้องการฟัง" : "รอระบบเสียงหรือบริการ AI พร้อม"}</span></div>{needsSource ? <button aria-label="เลือกแอปที่จะฟัง" className="ready-listen-button is-select" onClick={onOpenSourcePicker}><Headphones /><span>เลือกแอป</span><small>ขั้นตอนแรก</small></button> : <button className={`ready-listen-button ${runtime.listening ? "is-listening" : ""}`} disabled={busy === "listen" || previewMode || (!runtime.listening && !configured)} onClick={onToggleListening}>{busy === "listen" ? <LoaderCircle className="animate-spin" /> : runtime.listening ? <AudioLines /> : <Headphones />}<span>{runtime.listening ? "หยุดใช้งาน" : "เริ่มใช้งาน"}</span></button>}</div>
       {!needsSource && <div className="ready-source-list">
         <Row action="เปลี่ยน" icon={<Radio />} index={1} meterLabel="ระดับเสียงขาเข้า" meterValue={runtime.audioPeakDbfs} name={settings.listeningSource?.displayName ?? "แอปที่เลือก"} onAction={onOpenSourcePicker} readiness={incoming} title="แหล่งเสียงที่ฟัง" />
@@ -67,5 +67,14 @@ function aiReadiness(runtime: RuntimeState): Readiness {
   if (service.state === "connecting") return { label: "กำลังเชื่อมต่อ", detail: service.message, tone: "waiting" };
   if (runtime.aiSttBusy) return { label: "กำลังแปล", detail: "กำลังประมวลผลวลีล่าสุด", tone: "ready" };
   return { label: "พร้อม", detail: "แปลเสียงจากแอปได้", tone: "ready" };
+}
+function sessionSummary(settings: AppSettings, runtime: RuntimeState): { label: string; tone: "warning" | "ready" | "live" } {
+  if (!settings.listeningSource) return { label: "ต้องเลือกแหล่งเสียง", tone: "warning" };
+  if (runtime.lastError) return { label: "ระบบมีข้อผิดพลาด", tone: "warning" };
+  if (!runtime.workerReady) return { label: "ตัวตรวจเสียงยังไม่พร้อม", tone: "warning" };
+  if (runtime.captureWarning) return { label: "ตรวจสอบเสียงแอป", tone: "warning" };
+  if (runtime.aiService.state === "offline") return { label: "บริการแปลเชื่อมต่อไม่ได้", tone: "warning" };
+  if (runtime.aiService.state === "degraded") return { label: "บริการแปลขัดข้อง", tone: "warning" };
+  return runtime.listening ? { label: "กำลังทำงาน", tone: "live" } : { label: "พร้อมเริ่มใช้งาน", tone: "ready" };
 }
 function levelPercent(dbfs?: number | null): number { return dbfs == null ? 0 : Math.max(0, Math.min(100, ((dbfs + 60) / 60) * 100)); }

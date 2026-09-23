@@ -100,7 +100,7 @@ describe("settings with nullable desktop audio diagnostics", () => {
     const view = render(<SettingsApp activeTab="overview" />);
     expect(await screen.findByRole("alert")).toHaveTextContent(message);
     expect(screen.getByText("ตัวตรวจคำพูดยังไม่พร้อม")).toBeInTheDocument();
-    expect(screen.getAllByText("ต้องตรวจสอบ")).toHaveLength(2);
+    expect(screen.getByText("ระบบมีข้อผิดพลาด")).toBeInTheDocument();
     expect(document.querySelector(".settings-sidebar-dot")).toHaveClass("is-warning");
     view.rerender(<SettingsApp activeTab="advanced" advancedSection="audio" />);
     expect(screen.getByRole("alert")).toHaveTextContent(message);
@@ -109,6 +109,15 @@ describe("settings with nullable desktop audio diagnostics", () => {
     view.rerender(<SettingsApp activeTab="overview" />);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.queryByText("ตัวตรวจคำพูดยังไม่พร้อม")).not.toBeInTheDocument();
+  });
+
+  it("names an offline translation service in the session status", () => {
+    const snapshot = vi.mocked(useSnapshot)().snapshot!;
+    snapshot.runtime.aiService.state = "offline";
+    snapshot.runtime.listening = false;
+    render(<SettingsApp activeTab="overview" />);
+    expect(screen.getByText("บริการแปลเชื่อมต่อไม่ได้")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "ยังเริ่มแปลไม่ได้" })).toBeInTheDocument();
   });
 
   it("keeps success feedback and F8 separate while opening settings", async () => {
