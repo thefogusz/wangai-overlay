@@ -11,15 +11,21 @@ unsafe fn SendMessageW(hwnd:HWND,msg:u32,wparam:WPARAM,lparam:LPARAM)->LRESULT {
 }
 
 // COLORREF stores colors as 0x00bbggrr.
-const BG:COLORREF=COLORREF(0x00ebf3f6);
-const INK:COLORREF=COLORREF(0x00293223);
-const MUTED:COLORREF=COLORREF(0x00606b6b);
-const FOREST:COLORREF=COLORREF(0x00364328);
-const BORDER:COLORREF=COLORREF(0x00c3d0d6);
-const FIELD:COLORREF=COLORREF(0x00f7fcff);
+const BG:COLORREF=COLORREF(0x0023231c);
+const INK:COLORREF=COLORREF(0x00ecefe9);
+const MUTED:COLORREF=COLORREF(0x00adb1a5);
+const FOREST:COLORREF=COLORREF(0x009ec79c);
+const BORDER:COLORREF=COLORREF(0x003e4034);
+const FIELD:COLORREF=COLORREF(0x002f3027);
 struct View {
     task:Task,root:PathBuf,children:Vec<HWND>,font:HFONT,heading:HFONT,brush:HBRUSH,field_brush:HBRUSH,
+    font_resources:Vec<HANDLE>,noto_loaded:bool,kanit_loaded:bool,
     receiver:Option<mpsc::Receiver<Progress>>,cancel:Arc<AtomicBool>,busy:bool,cancellable:bool,dpi:u32,
+}
+unsafe fn load_embedded_font(bytes:&[u8]) -> Option<HANDLE> {
+    let mut count=0u32;
+    let handle=AddFontMemResourceEx(bytes.as_ptr().cast(),bytes.len() as u32,None,&mut count);
+    (count>0 && !handle.0.is_null()).then_some(handle)
 }
 pub fn error(message:&str) { error_owned(None,message); }
 fn error_owned(owner:Option<HWND>,message:&str) { unsafe { MessageBoxW(owner,PCWSTR(wide(message).as_ptr()),w!("WANGAI"),MB_OK|MB_ICONINFORMATION); } }
@@ -27,13 +33,15 @@ pub fn run(task:Task,root:PathBuf) -> Result<()> { unsafe {
     let _=SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
     CoInitializeEx(None,COINIT_APARTMENTTHREADED).ok()?;
     let _=InitCommonControlsEx(&INITCOMMONCONTROLSEX{dwSize:std::mem::size_of::<INITCOMMONCONTROLSEX>() as u32,dwICC:ICC_PROGRESS_CLASS});
+    let noto=load_embedded_font(include_bytes!("../../assets/fonts/NotoSansThai.ttf"));
+    let kanit=load_embedded_font(include_bytes!("../../assets/fonts/Kanit-Bold.ttf"));
     let instance=GetModuleHandleW(None)?;
     let class=w!("WANGAI.Portable.Host.1");
     let brush=CreateSolidBrush(BG);
     let wc=WNDCLASSW{lpfnWndProc:Some(procedure),hInstance:instance.into(),lpszClassName:class,hbrBackground:brush,hCursor:LoadCursorW(None,IDC_ARROW)?,hIcon:LoadIconW(Some(instance.into()),PCWSTR(1usize as *const u16)).unwrap_or_default(),..Default::default()};
     RegisterClassW(&wc);
     let dpi=GetDpiForSystem();
-    let mut view=Box::new(View{task,root,children:vec![],font:HFONT::default(),heading:HFONT::default(),brush,field_brush:CreateSolidBrush(FIELD),receiver:None,cancel:Arc::new(AtomicBool::new(false)),busy:false,cancellable:true,dpi});
+    let mut view=Box::new(View{task,root,children:vec![],font:HFONT::default(),heading:HFONT::default(),brush,field_brush:CreateSolidBrush(FIELD),font_resources:[noto,kanit].into_iter().flatten().collect(),noto_loaded:noto.is_some(),kanit_loaded:kanit.is_some(),receiver:None,cancel:Arc::new(AtomicBool::new(false)),busy:false,cancellable:true,dpi});
     let hwnd=CreateWindowExW(WS_EX_CONTROLPARENT,class,w!("WANGAI Portable"),WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX|WS_CLIPCHILDREN,
         CW_USEDEFAULT,CW_USEDEFAULT,740*dpi as i32/96,510*dpi as i32/96,None,None,Some(instance.into()),None)?;
     SetWindowLongPtrW(hwnd,GWLP_USERDATA,&mut *view as *mut View as isize);
@@ -54,7 +62,7 @@ pub fn run(task:Task,root:PathBuf) -> Result<()> { unsafe {
         control(w!("BUTTON"),"เตรียมและเปิด WANGAI (&S)",19,WS_TABSTOP|WINDOW_STYLE(BS_OWNERDRAW as u32))?,
         control(w!("BUTTON"),"ยกเลิก (&C)",20,WS_TABSTOP|WINDOW_STYLE(BS_OWNERDRAW as u32))?,
     ];
-    // Native themed checkboxes otherwise draw black text over the dark background.
+    // Native themed checkboxes ignore the custom text and background colors.
     let _=SetWindowTheme(view.children[5],w!(""),w!(""));
     let _=SetWindowTheme(view.children[8],w!(""),w!(""));
     SendMessageW(view.children[8],PBM_SETRANGE32,WPARAM(0),LPARAM(100));
@@ -72,15 +80,17 @@ pub fn run(task:Task,root:PathBuf) -> Result<()> { unsafe {
     while GetMessageW(&mut message,None,0,0).as_bool() {
         if !IsDialogMessageW(hwnd,&message).as_bool() { let _=TranslateMessage(&message); DispatchMessageW(&message); }
     }
-    let _=DeleteObject(view.font.into());let _=DeleteObject(view.heading.into()); let _=DeleteObject(view.brush.into()); let _=DeleteObject(view.field_brush.into()); CoUninitialize();
+    let _=DeleteObject(view.font.into());let _=DeleteObject(view.heading.into()); let _=DeleteObject(view.brush.into()); let _=DeleteObject(view.field_brush.into());
+    for font in view.font_resources.drain(..) { let _=RemoveFontMemResourceEx(font); }
+    CoUninitialize();
     Ok(())
 } }
 unsafe fn layout(hwnd:HWND,view:&mut View) {
     let scale=|n:i32| n*view.dpi as i32/96;
     if !view.font.is_invalid() { let _=DeleteObject(view.font.into()); }
     if !view.heading.is_invalid() {let _=DeleteObject(view.heading.into());}
-    view.font=CreateFontW(-scale(16),0,0,0,400,0,0,0,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH.0 as u32,w!("Segoe UI"));
-    view.heading=CreateFontW(-scale(34),0,0,0,700,0,0,0,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH.0 as u32,w!("Segoe UI"));
+    view.font=CreateFontW(-scale(16),0,0,0,400,0,0,0,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH.0 as u32,if view.noto_loaded { w!("Noto Sans Thai") } else { w!("Segoe UI") });
+    view.heading=CreateFontW(-scale(34),0,0,0,700,0,0,0,DEFAULT_CHARSET,OUT_DEFAULT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,DEFAULT_PITCH.0 as u32,if view.kanit_loaded { w!("Kanit") } else { w!("Segoe UI") });
     let positions=[(38,27,650,49),(38,80,650,30),(38,132,650,26),(38,166,478,40),(532,166,162,40),(38,232,650,30),(38,266,650,30),(38,307,656,50),(38,372,656,10),(38,405,460,48),(516,405,178,48)];
     for (child,(x,y,w,h)) in view.children.iter().zip(positions) {
         SendMessageW(*child,WM_SETFONT,WPARAM(view.font.0 as usize),LPARAM(1));

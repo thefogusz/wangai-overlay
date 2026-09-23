@@ -49,11 +49,11 @@ describe("single-source Ready Room", () => {
     const view = render(<ReadyRoom {...props} />);
     for (const displayName of ["Discord", "Google Chrome", "My Custom App"]) {
       view.rerender(<ReadyRoom {...props} settings={{ ...snapshot.settings, listeningSource: { ...snapshot.settings.listeningSource!, displayName } }} />);
-      expect(screen.getByText(displayName, { exact: true })).toBeInTheDocument();
+      expect(screen.getAllByText(displayName, { exact: true })).toHaveLength(2);
       expect(screen.queryByText("Mistfall Hunter", { exact: true })).not.toBeInTheDocument();
     }
     view.rerender(<ReadyRoom {...props} settings={{ ...snapshot.settings, listeningSource: undefined }} />);
-    expect(screen.getByText("ยังไม่ได้เลือกแอป")).toBeInTheDocument();
+    expect(screen.getAllByText("ยังไม่ได้เลือกแอป")).toHaveLength(2);
     expect(screen.queryByText("My Custom App", { exact: true })).not.toBeInTheDocument();
   });
 
@@ -63,7 +63,7 @@ describe("single-source Ready Room", () => {
     const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, listening: false }, history: [], previewMode: false, onToggleListening: toggle, onOpenSourcePicker: vi.fn(), webRuntime: false };
     const view = render(<ReadyRoom {...props} />);
     const start = screen.getByRole("button", { name: /เริ่มฟัง · F8/ });
-    const title = screen.getByRole("heading", { name: "พร้อมฟังแล้ว" });
+    const title = screen.getByRole("heading", { name: "การฟังปัจจุบัน" });
     expect(title.compareDocumentPosition(start) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(start);
     expect(toggle).toHaveBeenCalledOnce();
