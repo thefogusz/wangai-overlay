@@ -63,7 +63,7 @@ type TranscriptEvent =
 
 Initial implementation: `XaiStreamingSttProvider`.
 
-Future implementation: `LocalWhisperProvider` or another hosted STT provider.
+Future STT changes must keep inference off the user's gaming PC; evaluate hosted providers behind this interface.
 
 ### Translation provider
 
@@ -128,7 +128,7 @@ Future implementations: Gemini Flash-Lite or a local translation model.
 ### Not in MVP
 
 - Demucs/source separation: too heavy beside a game and adds large latency.
-- Local browser Whisper: model download and GPU/CPU contention undermine the no-install lightweight promise.
+- Local browser ASR models: model download and GPU/CPU contention undermine the no-install lightweight promise. They are excluded from the product direction, not deferred.
 - RNNoise on mixed system audio by default: it can damage speech mixed with effects/music; evaluate only with real fixtures.
 
 ## Browser widget hosting
