@@ -341,7 +341,8 @@ async fn stt_forwards_original_pcm_and_chooses_models_on_server() {
         ("incoming", "dynamic-incoming", "en"),
         ("microphone", "dynamic-mic", "th"),
     ] {
-        let form = reqwest::multipart::Form::new().text("stream", stream).part(
+        let form = reqwest::multipart::Form::new().text("stream", stream)
+            .text("vocabulary", if stream == "incoming" { "[\"Mistfall Hunter\"]" } else { "[]" }).part(
             "file",
             reqwest::multipart::Part::bytes(audio.clone()).file_name("speech.wav"),
         );
@@ -358,7 +359,12 @@ async fn stt_forwards_original_pcm_and_chooses_models_on_server() {
         let text = String::from_utf8_lossy(&forwarded);
         assert!(text.contains(model));
         assert!(text.contains(&format!("\r\n\r\n{lang}\r\n")));
-        assert!(!text.contains("name=\"prompt\""));
+        if stream == "incoming" {
+            assert!(text.contains("name=\"prompt\""));
+            assert!(text.contains("Mistfall Hunter"));
+        } else {
+            assert!(!text.contains("name=\"prompt\""));
+        }
     }
     state.flush_metrics().await;
     gateway_task.abort();

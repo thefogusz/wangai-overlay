@@ -498,6 +498,19 @@ impl AiSttManager {
                 } else {
                     "microphone"
                 },
+                &if job.stream == StreamKind::Incoming {
+                    state.settings.snapshot().glossary.into_iter()
+                        .map(|term| term.source.trim().to_string())
+                        .filter(|term| {
+                            (1..=3).contains(&term.split_whitespace().count())
+                                && term.len() <= 40
+                                && term.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, ' ' | '-' | '\''))
+                        })
+                        .take(20)
+                        .collect()
+                } else {
+                    Vec::new()
+                },
             )
             .await?;
 
