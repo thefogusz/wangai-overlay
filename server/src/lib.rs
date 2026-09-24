@@ -327,17 +327,24 @@ async fn transcribe(
         _ => return Err(fail(ErrorCode::InvalidRequest)),
     };
     let terms: Vec<String> = match vocabulary {
-        Some(value) if value.len() <= 1024 =>
-            serde_json::from_str(&value).map_err(|_| fail(ErrorCode::InvalidRequest))?,
+        Some(value) if value.len() <= 1024 => {
+            serde_json::from_str(&value).map_err(|_| fail(ErrorCode::InvalidRequest))?
+        }
         Some(_) => return Err(fail(ErrorCode::InvalidRequest)),
         None => Vec::new(),
     };
-    if terms.len() > 20 || (language != "en" && !terms.is_empty())
+    if terms.len() > 20
+        || (language != "en" && !terms.is_empty())
         || terms.iter().any(|term| {
             let word_count = term.split_whitespace().count();
-            term.len() > 40 || word_count == 0 || word_count > 3
-                || !term.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, ' ' | '-' | '\''))
-        }) {
+            term.len() > 40
+                || word_count == 0
+                || word_count > 3
+                || !term
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || matches!(c, ' ' | '-' | '\''))
+        })
+    {
         return Err(fail(ErrorCode::InvalidRequest));
     }
     let _permit = state
@@ -355,7 +362,10 @@ async fn transcribe(
         .text("response_format", "verbose_json")
         .text("temperature", "0");
     if !terms.is_empty() {
-        form = form.text("prompt", format!("Game names and terms: {}.", terms.join(", ")));
+        form = form.text(
+            "prompt",
+            format!("Game names and terms: {}.", terms.join(", ")),
+        );
     }
     let mut result = state
         .upstream(

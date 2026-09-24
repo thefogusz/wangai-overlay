@@ -4,6 +4,7 @@ use std::{
         atomic::{AtomicU64, AtomicUsize, Ordering},
         Arc, Mutex,
     },
+    time::Instant,
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -413,7 +414,17 @@ impl AiSttManager {
         }
 
         let manager = self.clone();
+        let queued_at = Instant::now();
         tauri::async_runtime::spawn(async move {
+            let timing_segment_id = utterance.segment_id.clone();
+            let timing_stream = utterance.stream;
+            // Bound the whole pipeline while allowing STT to advance during translation.
+            let translation_slot = queue
+                .translation_slots
+                .clone()
+                .acquire_owned()
+                .await
+                .expect("translation semaphore closed");
             let permit = queue
                 .semaphore
                 .acquire()
@@ -423,24 +434,50 @@ impl AiSttManager {
                 || manager.generation(utterance.stream) != utterance.generation
             {
                 drop(permit);
+                drop(translation_slot);
                 queue.queued.fetch_sub(1, Ordering::AcqRel);
                 return;
             }
 
+            let stt_started = Instant::now();
             let busy = manager.busy_jobs.fetch_add(1, Ordering::AcqRel) + 1;
             set_stt_busy(&app, busy > 0, "กำลังส่งเสียงให้ บริการ AI");
             let result = manager.process_job(&app, utterance).await;
+            let stt_ms = stt_started.elapsed().as_millis();
             let remaining_busy = manager.busy_jobs.fetch_sub(1, Ordering::AcqRel) - 1;
             drop(permit);
             queue.queued.fetch_sub(1, Ordering::AcqRel);
 
+            let mut translation_ms = None;
+            let outcome;
             match result {
-                Ok(()) => set_stt_busy(&app, remaining_busy > 0, "บริการ AI พร้อมใช้งาน"),
+                Ok(transcript) => {
+                    set_stt_busy(&app, remaining_busy > 0, "บริการ AI พร้อมใช้งาน");
+                    if let Some((transcript, generation)) = transcript {
+                        let translation_started = Instant::now();
+                        pipeline::handle_transcript_event(app.clone(), transcript, generation)
+                            .await;
+                        translation_ms = Some(translation_started.elapsed().as_millis());
+                        outcome = "processed";
+                    } else {
+                        outcome = "skipped";
+                    }
+                }
                 Err(error) => {
                     set_stt_busy(&app, remaining_busy > 0, "ถอดเสียงด้วย บริการ AI ไม่สำเร็จ");
                     report_stt_error(&app, &error.to_string());
+                    outcome = "stt_error";
                 }
             }
+            if std::env::var_os("WANGAI_PIPELINE_TIMING").is_some() {
+                eprintln!(
+                    "pipeline_timing segment={timing_segment_id} stream={timing_stream:?} outcome={outcome} queue_ms={} stt_ms={stt_ms} translation_stage_ms={} total_ms={}",
+                    stt_started.duration_since(queued_at).as_millis(),
+                    translation_ms.map_or_else(|| "-".into(), |ms| ms.to_string()),
+                    queued_at.elapsed().as_millis(),
+                );
+            }
+            drop(translation_slot);
         });
         true
     }
@@ -470,10 +507,14 @@ impl AiSttManager {
         }
     }
 
-    async fn process_job(&self, app: &AppHandle, job: SttJob) -> Result<()> {
+    async fn process_job(
+        &self,
+        app: &AppHandle,
+        job: SttJob,
+    ) -> Result<Option<(TranscriptEvent, u64)>> {
         let state = app.state::<AppState>();
         if !state.gateway.accepts_started_at(job.started_at_ms) {
-            return Ok(());
+            return Ok(None);
         }
         let language = match job.stream {
             StreamKind::Incoming => "en",
@@ -487,7 +528,7 @@ impl AiSttManager {
                     job.stream
                 ),
             );
-            return Ok(());
+            return Ok(None);
         }
         let transcription: TranscriptionResponse = state
             .gateway
@@ -499,12 +540,18 @@ impl AiSttManager {
                     "microphone"
                 },
                 &if job.stream == StreamKind::Incoming {
-                    state.settings.snapshot().glossary.into_iter()
+                    state
+                        .settings
+                        .snapshot()
+                        .glossary
+                        .into_iter()
                         .map(|term| term.source.trim().to_string())
                         .filter(|term| {
                             (1..=3).contains(&term.split_whitespace().count())
                                 && term.len() <= 40
-                                && term.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, ' ' | '-' | '\''))
+                                && term.chars().all(|c| {
+                                    c.is_ascii_alphanumeric() || matches!(c, ' ' | '-' | '\'')
+                                })
                         })
                         .take(20)
                         .collect()
@@ -515,7 +562,7 @@ impl AiSttManager {
             .await?;
 
         if self.generation(job.stream) != job.generation {
-            return Ok(());
+            return Ok(None);
         }
         if transcription.is_low_confidence() {
             if job.diagnostic_probe {
@@ -529,7 +576,7 @@ impl AiSttManager {
                 "pipeline-status",
                 "ข้ามเสียงที่ Whisper ประเมินว่าไม่ชัดหรือไม่ใช่คำพูด",
             );
-            return Ok(());
+            return Ok(None);
         }
         let text = transcription.text.trim();
         if text.is_empty() {
@@ -541,7 +588,7 @@ impl AiSttManager {
                 );
             }
             let _ = app.emit("pipeline-status", "ข้ามผลถอดเสียงว่างจาก บริการ AI");
-            return Ok(());
+            return Ok(None);
         }
         if job.diagnostic_probe {
             report_probe_result(
@@ -554,7 +601,7 @@ impl AiSttManager {
             && self.should_skip_or_record_playback_text(job.stream, text, job.automatic_cloud_scan)
         {
             let _ = app.emit("pipeline-status", "ข้ามข้อความซ้ำจาก Auto Cloud Scan");
-            return Ok(());
+            return Ok(None);
         }
         let ended_at_ms = chrono::Utc::now().timestamp_millis();
         let transcript = TranscriptEvent {
@@ -567,8 +614,7 @@ impl AiSttManager {
             started_at_ms: job.started_at_ms,
             ended_at_ms,
         };
-        pipeline::handle_transcript_event(app.clone(), transcript, job.generation).await;
-        Ok(())
+        Ok(Some((transcript, job.generation)))
     }
 
     fn queue(&self, stream: StreamKind) -> Arc<StreamQueue> {
@@ -683,6 +729,7 @@ struct SttJob {
 
 struct StreamQueue {
     semaphore: Semaphore,
+    translation_slots: Arc<Semaphore>,
     queued: AtomicUsize,
 }
 
@@ -690,6 +737,7 @@ impl Default for StreamQueue {
     fn default() -> Self {
         Self {
             semaphore: Semaphore::new(1),
+            translation_slots: Arc::new(Semaphore::new(4)),
             queued: AtomicUsize::new(0),
         }
     }
@@ -1180,6 +1228,25 @@ mod tests {
         assert!(queue.try_enqueue());
         assert!(queue.try_enqueue());
         assert!(!queue.try_enqueue());
+    }
+
+    #[test]
+    fn next_stt_can_run_while_previous_translation_is_pending() {
+        let queue = StreamQueue::default();
+        let previous_translation = queue.translation_slots.try_acquire().unwrap();
+        let previous_stt = queue.semaphore.try_acquire().unwrap();
+        assert!(queue.semaphore.try_acquire().is_err());
+        drop(previous_stt);
+        let next_stt = queue.semaphore.try_acquire().unwrap();
+        let next_translation = queue.translation_slots.try_acquire().unwrap();
+        let additional = (0..2)
+            .map(|_| queue.translation_slots.try_acquire().unwrap())
+            .collect::<Vec<_>>();
+        assert!(queue.translation_slots.try_acquire().is_err());
+        drop(additional);
+        drop(next_translation);
+        drop(next_stt);
+        drop(previous_translation);
     }
 
     #[test]
