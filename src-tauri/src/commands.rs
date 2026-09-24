@@ -2,7 +2,7 @@ use crate::{
     audio, hotkeys,
     models::{
         AppSettings, AppSnapshot, AudioOutputDevice, CaptureMode, CaptureSource, GlossaryTerm,
-        HotkeySettings, OverlayPresentation, OverlaySettings, StreamKind, VadSettings,
+        HotkeySettings, OverlaySettings, StreamKind, VadSettings,
     },
     pipeline, processes,
     state::AppState,
@@ -81,6 +81,10 @@ pub async fn dispatch_web_command(
             let settings = update_output_device_inner(app, &state, device_id)?;
             serde_json::to_value(settings).map_err(|error| error.to_string())?
         }
+        WebCommand::UpdateMicrophoneDevice { device_id } => {
+            let settings = update_microphone_device_inner(&state, device_id)?;
+            serde_json::to_value(settings).map_err(|error| error.to_string())?
+        }
         WebCommand::UpdateRescueScan { enabled } => {
             let settings = state
                 .settings
@@ -110,6 +114,7 @@ pub async fn dispatch_web_command(
                 .settings
                 .update_overlay(overlay)
                 .map_err(|error| error.to_string())?;
+            let _ = app.emit("settings-updated", settings.clone());
             serde_json::to_value(settings).map_err(|error| error.to_string())?
         }
         WebCommand::UpdateVadSettings { vad } => {
@@ -167,6 +172,32 @@ pub fn list_output_devices() -> CommandResult<Vec<AudioOutputDevice>> {
 }
 
 #[tauri::command]
+pub fn default_microphone_name() -> CommandResult<Option<String>> {
+    audio::default_microphone_name().map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn list_microphone_devices() -> CommandResult<Vec<AudioOutputDevice>> {
+    audio::list_microphone_devices().map_err(|error| error.to_string())
+}
+
+fn update_microphone_device_inner(state: &AppState, device_id: Option<String>) -> CommandResult<AppSettings> {
+    let device_id = device_id.and_then(|id| { let id = id.trim(); (!id.is_empty()).then(|| id.to_string()) });
+    if let Some(id) = device_id.as_deref() {
+        audio::resolve_microphone_device(id).map_err(|error| error.to_string())?;
+    }
+    if state.runtime.read().expect("runtime lock poisoned").microphone_active {
+        return Err("ปล่อยปุ่มพูดก่อนเปลี่ยนไมโครโฟน".into());
+    }
+    state.settings.update_microphone_device(device_id).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn update_microphone_device(state: State<'_, AppState>, device_id: Option<String>) -> CommandResult<AppSettings> {
+    update_microphone_device_inner(&state, device_id)
+}
+
+#[tauri::command]
 pub fn get_web_companion_info(web: State<'_, WebCompanionManager>) -> WebCompanionInfo {
     web.info()
 }
@@ -212,6 +243,23 @@ pub fn show_listening_overlay(app: &AppHandle) -> CommandResult<()> {
     overlay.show().map_err(|e| e.to_string())
 }
 
+pub fn show_main_after_stop(app: &AppHandle) -> CommandResult<()> {
+    let main = app
+        .get_webview_window("main")
+        .context("ไม่พบหน้าหลัก")
+        .map_err(|e| e.to_string())?;
+    let overlay = app
+        .get_webview_window("overlay")
+        .context("ไม่พบ Overlay")
+        .map_err(|e| e.to_string())?;
+    main.unminimize().map_err(|e| e.to_string())?;
+    main.show().map_err(|e| e.to_string())?;
+    main.eval("window.location.hash = '#/settings/overview'")
+        .map_err(|e| e.to_string())?;
+    main.set_focus().map_err(|e| e.to_string())?;
+    overlay.hide().map_err(|e| e.to_string())
+}
+
 pub fn hide_main_for_session(app: &AppHandle, first_start: bool) -> CommandResult<()> {
     if first_start {
         // Offer placement immediately for a new session. Returning from Settings
@@ -235,11 +283,6 @@ fn centered_settings_position(
         origin.x + area.width.saturating_sub(size.width) as i32 / 2,
         origin.y + area.height.saturating_sub(size.height) as i32 / 2,
     )
-}
-
-#[tauri::command]
-pub fn quit_app(app: AppHandle) {
-    app.exit(0);
 }
 
 #[tauri::command]
@@ -415,14 +458,30 @@ pub fn update_hotkeys(
 }
 
 #[tauri::command]
+pub fn set_hotkey_capture_mode(
+    app: AppHandle,
+    window: tauri::WebviewWindow,
+    state: State<'_, AppState>,
+    enabled: bool,
+) -> CommandResult<()> {
+    if window.label() != "main" {
+        return Err("ตั้งปุ่มลัดได้จากหน้าต่างหลักเท่านั้น".into());
+    }
+    hotkeys::set_capture_mode(&app, &state, enabled).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 pub fn update_overlay_settings(
+    app: AppHandle,
     state: State<'_, AppState>,
     overlay: OverlaySettings,
 ) -> CommandResult<AppSettings> {
-    state
+    let settings = state
         .settings
         .update_overlay(overlay)
-        .map_err(|error| error.to_string())
+        .map_err(|error| error.to_string())?;
+    let _ = app.emit("settings-updated", settings.clone());
+    Ok(settings)
 }
 
 fn update_vad_inner(
@@ -474,36 +533,6 @@ pub fn update_glossary(
 #[tauri::command]
 pub fn set_overlay_edit_mode(app: AppHandle, enabled: bool) -> CommandResult<bool> {
     hotkeys::set_overlay_edit_mode(&app, enabled).map_err(|error| error.to_string())
-}
-
-#[tauri::command]
-pub fn set_overlay_presentation(
-    app: AppHandle,
-    state: State<'_, AppState>,
-    presentation: OverlayPresentation,
-) -> CommandResult<()> {
-    let overlay = app
-        .get_webview_window("overlay")
-        .context("ไม่พบ overlay window")
-        .map_err(|error| error.to_string())?;
-    let settings = state.settings.snapshot();
-    let logical_size = match presentation {
-        OverlayPresentation::Collapsed => (332, 52),
-        OverlayPresentation::Expanded => (settings.overlay.width, settings.overlay.height),
-    };
-    resize_overlay_anchored(&overlay, logical_size).map_err(|error| error.to_string())?;
-    let collapsed = matches!(presentation, OverlayPresentation::Collapsed);
-    state
-        .overlay_collapsed
-        .store(collapsed, std::sync::atomic::Ordering::Relaxed);
-    let edit_mode = state
-        .runtime
-        .read()
-        .expect("runtime lock poisoned")
-        .overlay_edit_mode;
-    overlay
-        .set_ignore_cursor_events(!hotkeys::overlay_accepts_input(collapsed, edit_mode))
-        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -574,7 +603,10 @@ pub fn restore_overlay_bounds(app: &AppHandle, settings: &AppSettings) -> Comman
         .context("ไม่พบ overlay window")
         .map_err(|error| error.to_string())?;
     overlay
-        .set_size(LogicalSize::new(332.0, 52.0))
+        .set_size(LogicalSize::new(
+            settings.overlay.width as f64,
+            settings.overlay.height as f64,
+        ))
         .map_err(|error| error.to_string())?;
     let monitors = overlay
         .available_monitors()
@@ -601,8 +633,8 @@ pub fn restore_overlay_bounds(app: &AppHandle, settings: &AppSettings) -> Comman
     if let Some(monitor) = monitor {
         let area = monitor.work_area();
         let size = PhysicalSize::new(
-            (332.0 * monitor.scale_factor()) as u32,
-            (52.0 * monitor.scale_factor()) as u32,
+            (settings.overlay.width as f64 * monitor.scale_factor()).round() as u32,
+            (settings.overlay.height as f64 * monitor.scale_factor()).round() as u32,
         );
         let preferred = saved.unwrap_or(PhysicalPosition::new(
             area.position.x + area.size.width.saturating_sub(size.width + 24) as i32,
@@ -627,31 +659,6 @@ fn physical_to_logical(value: u32, scale_factor: f64) -> u32 {
         return value;
     }
     (value as f64 / scale_factor).round().max(1.0) as u32
-}
-
-fn resize_overlay_anchored(window: &WebviewWindow, logical_size: (u32, u32)) -> anyhow::Result<()> {
-    let current_position = window.outer_position()?;
-    let current_size = window.outer_size()?;
-    let scale_factor = window.scale_factor()?;
-    let target_size = PhysicalSize::new(
-        (logical_size.0 as f64 * scale_factor).round().max(1.0) as u32,
-        (logical_size.1 as f64 * scale_factor).round().max(1.0) as u32,
-    );
-    if let Some(monitor) = window.current_monitor()? {
-        let work_area = monitor.work_area();
-        window.set_position(anchored_overlay_position(
-            current_position,
-            current_size,
-            target_size,
-            work_area.position,
-            work_area.size,
-        ))?;
-    }
-    window.set_size(LogicalSize::new(
-        logical_size.0 as f64,
-        logical_size.1 as f64,
-    ))?;
-    Ok(())
 }
 
 fn anchored_overlay_position(
@@ -717,14 +724,6 @@ mod overlay_geometry_tests {
     }
 
     #[test]
-    fn capsule_and_edit_mode_accept_clicks_but_locked_subtitles_do_not() {
-        assert!(hotkeys::overlay_accepts_input(true, false));
-        assert!(hotkeys::overlay_accepts_input(true, true));
-        assert!(hotkeys::overlay_accepts_input(false, true));
-        assert!(!hotkeys::overlay_accepts_input(false, false));
-    }
-
-    #[test]
     fn startup_opens_ready_room_and_keeps_overlay_hidden() {
         let config: serde_json::Value =
             serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
@@ -735,6 +734,8 @@ mod overlay_geometry_tests {
         assert_eq!(main["url"], "index.html#/settings/overview");
         let overlay = windows.iter().find(|w| w["label"] == "overlay").unwrap();
         assert_eq!(overlay["visible"], false);
+        assert_eq!(overlay["width"], 420);
+        assert_eq!(overlay["height"], 236);
     }
 
     #[test]
@@ -751,20 +752,7 @@ mod overlay_geometry_tests {
     }
 
     #[test]
-    fn resize_keeps_the_nearest_bottom_right_corner() {
-        assert_eq!(
-            anchored_overlay_position(
-                PhysicalPosition::new(1500, 800),
-                PhysicalSize::new(420, 236),
-                PhysicalSize::new(332, 52),
-                PhysicalPosition::new(0, 0),
-                PhysicalSize::new(1920, 1040)
-            ),
-            PhysicalPosition::new(1588, 984)
-        );
-    }
-    #[test]
-    fn resize_clamps_the_window_to_the_monitor_work_area() {
+    fn restored_position_clamps_to_the_monitor_work_area() {
         assert_eq!(
             anchored_overlay_position(
                 PhysicalPosition::new(-25, -10),

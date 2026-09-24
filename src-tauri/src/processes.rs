@@ -603,9 +603,10 @@ mod tests {
             apps.len()
         );
         println!(
-            "Detected {} raw processes and {} application groups",
+            "Detected {} raw processes, {} application groups, {} with visible windows",
             nodes.len(),
-            apps.len()
+            apps.len(),
+            apps.iter().filter(|app| app.has_window).count()
         );
         for app in apps.iter().filter(|a| {
             ["discord.exe", "chrome.exe", "code.exe", "chatgpt.exe"]

@@ -83,6 +83,7 @@ pub fn run() {
             commands::restore_overlay_bounds(app.handle(), &settings)
                 .map_err(anyhow::Error::msg)?;
             hotkeys::register_hotkeys(app.handle(), &settings.hotkeys)?;
+            hotkeys::start_mouse_shortcuts(app.handle().clone())?;
 
             #[cfg(feature = "release-test")]
             release_test::checkpoint(app.handle(), "hotkeys-registered");
@@ -123,14 +124,12 @@ pub fn run() {
                         runtime.listening || runtime.microphone_active
                     };
                     if running {
-                        if commands::show_listening_overlay(window.app_handle()).is_ok() {
-                            let _ = window.hide();
-                        }
-                    } else {
-                        window.app_handle().exit(0);
+                        let _ = commands::show_listening_overlay(window.app_handle());
                     }
+                    let _ = window.hide();
                 } else if window.label() == "overlay" {
-                    window.app_handle().exit(0);
+                    api.prevent_close();
+                    let _ = window.hide();
                 }
             }
         })
@@ -143,10 +142,12 @@ pub fn run() {
             commands::list_capture_sources,
             commands::list_running_apps,
             commands::list_output_devices,
+            commands::default_microphone_name,
+            commands::list_microphone_devices,
+            commands::update_microphone_device,
             commands::get_web_companion_info,
             commands::open_web_companion,
             commands::open_settings_window,
-            commands::quit_app,
             commands::select_listening_source,
             commands::clear_listening_source,
             commands::update_capture_mode,
@@ -157,11 +158,11 @@ pub fn run() {
             commands::set_listening,
             commands::probe_recent_audio,
             commands::update_hotkeys,
+            commands::set_hotkey_capture_mode,
             commands::update_overlay_settings,
             commands::update_vad_settings,
             commands::update_glossary,
             commands::set_overlay_edit_mode,
-            commands::set_overlay_presentation,
             commands::save_overlay_bounds,
             commands::start_overlay_drag,
             commands::copy_latest_reply,

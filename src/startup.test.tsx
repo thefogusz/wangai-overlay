@@ -12,6 +12,7 @@ vi.mock("./api", () => ({
   api: {
     snapshot: mocks.snapshot,
     listOutputDevices: vi.fn(async () => []),
+    defaultMicrophoneName: vi.fn(async () => "Microphone (Default)"),
     getWebCompanionInfo: vi.fn(async () => ({ origin: "http://127.0.0.1", running: true })),
   },
   isWebCompanion: mocks.web,

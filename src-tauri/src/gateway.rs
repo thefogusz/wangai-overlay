@@ -18,6 +18,23 @@ pub struct GatewayClient {
     fresh_after_ms: Arc<AtomicI64>,
 }
 
+const DEVELOPMENT_GATEWAY_URL: &str = "https://wangai-ai.onrender.com";
+
+fn configured_base_url<'a>(
+    development: bool,
+    runtime: Option<&'a str>,
+    compiled: Option<&'a str>,
+) -> &'a str {
+    if development {
+        runtime
+            .filter(|value| !value.trim().is_empty())
+            .or(compiled)
+            .unwrap_or(DEVELOPMENT_GATEWAY_URL)
+    } else {
+        compiled.unwrap_or("")
+    }
+}
+
 pub fn validate_base_url(value: &str, development: bool) -> Result<String> {
     let url = reqwest::Url::parse(value).map_err(|_| anyhow!("WANGAI_API_BASE_URL ไม่ถูกต้อง"))?;
     let loopback = matches!(url.host_str(), Some("localhost" | "127.0.0.1" | "[::1]"));
@@ -37,11 +54,16 @@ pub fn validate_base_url(value: &str, development: bool) -> Result<String> {
 
 impl GatewayClient {
     pub fn new(installation_id: String) -> Result<Self> {
-        let base = option_env!("WANGAI_API_BASE_URL").unwrap_or(if cfg!(debug_assertions) {
-            "http://127.0.0.1:8080"
+        let runtime_base = if cfg!(debug_assertions) {
+            std::env::var("WANGAI_API_BASE_URL").ok()
         } else {
-            ""
-        });
+            None
+        };
+        let base = configured_base_url(
+            cfg!(debug_assertions),
+            runtime_base.as_deref(),
+            option_env!("WANGAI_API_BASE_URL"),
+        );
         Self::with_url(base, installation_id, cfg!(debug_assertions))
     }
 
@@ -190,6 +212,22 @@ impl GatewayClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn debug_uses_live_gateway_by_default_and_allows_local_override() {
+        assert_eq!(configured_base_url(true, None, None), DEVELOPMENT_GATEWAY_URL);
+        assert_eq!(
+            configured_base_url(true, Some("http://127.0.0.1:8080"), None),
+            "http://127.0.0.1:8080"
+        );
+        assert_eq!(
+            configured_base_url(true, None, Some("https://compiled.example")),
+            "https://compiled.example"
+        );
+        assert_eq!(
+            configured_base_url(false, Some("https://runtime.example"), Some("https://compiled.example")),
+            "https://compiled.example"
+        );
+    }
     #[test]
     fn production_requires_https_and_no_embedded_secrets() {
         assert!(validate_base_url("http://127.0.0.1:8080", true).is_ok());

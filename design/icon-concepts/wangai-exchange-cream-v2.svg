@@ -11,5 +11,5 @@
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
   <path d="M130 164a48 48 0 0 1 48-48h156a48 48 0 0 1 48 48v112a48 48 0 0 1-48 48h-82l-70 66v-66h-4a48 48 0 0 1-48-48z" fill="none" stroke="url(#accent)" stroke-width="34" stroke-linejoin="round"/>
-  <path d="M190 220h132M218 176l-28 44 28 44M294 176l28 44-28 44" fill="none" stroke="#ecfff6" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M190 220h132M218 176l-28 44 28 44M294 176l28 44-28 44" fill="none" stroke="#F3E5CC" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

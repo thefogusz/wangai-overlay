@@ -54,7 +54,9 @@ export function ProcessPickerDialog({ apps, selected, loading, error, previewMod
   }, []);
   const choices = useMemo(() => {
     const text = query.trim().toLocaleLowerCase();
-    return apps.filter((app) => !text || [app.displayName, app.executableName, ...app.searchNames].some((name) => name.toLocaleLowerCase().includes(text)))
+    return apps.filter((app) => text
+      ? [app.displayName, app.executableName, ...app.searchNames].some((name) => name.toLocaleLowerCase().includes(text))
+      : app.hasWindow || isSelectedApp(app, selected))
       .sort((a, b) => Number(isSelectedApp(b, selected)) - Number(isSelectedApp(a, selected)) || Number(b.hasWindow) - Number(a.hasWindow) || a.displayName.localeCompare(b.displayName) || a.id.localeCompare(b.id));
   }, [apps, query, selected]);
   const select = async (source: CaptureSource) => {
@@ -75,7 +77,8 @@ export function ProcessPickerDialog({ apps, selected, loading, error, previewMod
       <header><div><span><Globe2 /></span><div><p>แอปที่กำลังเปิดอยู่บนเครื่อง</p><h2 id="process-dialog-title">เลือกแอปที่จะฟัง</h2></div></div><button aria-label="ปิดหน้าต่างเลือกแอป" onClick={onClose}><X /></button></header>
       <div className="process-dialog-hint" id="process-dialog-hint"><Info aria-hidden="true" /><div><strong>เลือกเกมหรือแอปที่ต้องการแปลเสียง</strong><p>หากไม่พบ ให้เปิดแอปนั้นก่อนแล้วกดรีเฟรช</p></div></div>
       <div className="process-dialog-search"><Search /><input aria-label="ค้นหาแอปที่จะฟัง" aria-describedby="process-dialog-hint" placeholder="ค้นหาชื่อเกมหรือแอป" ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} /><button aria-label="รีเฟรชรายการแอป" disabled={loading} onClick={onRefresh}><RefreshCw className={loading ? "animate-spin" : ""} /></button></div>
-      <p className="process-dialog-status" role="status">{loading ? "กำลังตรวจหาแอป…" : `พบ ${choices.length} แอป`}</p>
+      <div className="process-dialog-status-row"><p className="process-dialog-status" role="status">{loading ? "กำลังตรวจหาแอป…" : query.trim() ? `พบ ${choices.length} รายการที่ตรงกับคำค้น` : `แอปหลักที่เปิดอยู่ ${choices.length} รายการ`}</p>
+        {!query.trim() && <span className="process-dialog-search-hint">ไม่พบแอป? พิมพ์ชื่อเพื่อค้นหา</span>}</div>
       {(error || selectionError) && <p className="process-dialog-error" role="alert">{selectionError ?? error}</p>}
       <div className="process-dialog-list" aria-busy={loading} ref={listRef}>
         {choices.map((app) => {

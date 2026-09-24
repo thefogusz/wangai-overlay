@@ -1,23 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { overlayPresentation, visibleOverlayItems } from "./overlayPresentation";
+import { visibleOverlayItems } from "./overlayItems";
 import type { SubtitleItem } from "./types";
 
-describe("overlay presentation", () => {
-  const idle = { hasPartial: false, visibleItems: 0, microphoneActive: false, editMode: false };
-
-  it("collapses while idle", () => {
-    expect(overlayPresentation(idle)).toBe("collapsed");
-  });
-
-  it.each([
-    ["partial transcript", { ...idle, hasPartial: true }],
-    ["recent final", { ...idle, visibleItems: 1 }],
-    ["push to talk", { ...idle, microphoneActive: true }],
-    ["edit mode", { ...idle, editMode: true }],
-  ])("expands for %s", (_label, state) => {
-    expect(overlayPresentation(state)).toBe("expanded");
-  });
-
+describe("visible overlay items", () => {
   it("keeps the latest four messages until the conversation becomes idle", () => {
     const now = 1_000_000;
     const item = (segmentId: string, createdAtMs: number): SubtitleItem => ({
@@ -44,5 +29,19 @@ describe("overlay presentation", () => {
       "message-5",
     ]);
     expect(visibleOverlayItems(history, 4, 8, now + 8_000)).toEqual([]);
+  });
+
+  it("keeps the newest translation visible for the new 30-second default", () => {
+    const item: SubtitleItem = {
+      segmentId: "recent",
+      stream: "incoming",
+      originalLanguage: "en",
+      originalText: "Listen carefully",
+      translatedText: "ฟังให้ดี",
+      status: "success",
+      createdAtMs: 1_000,
+    };
+    expect(visibleOverlayItems([item], 4, 30, 30_999)).toEqual([item]);
+    expect(visibleOverlayItems([item], 4, 30, 31_000)).toEqual([]);
   });
 });

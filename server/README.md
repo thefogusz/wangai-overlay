@@ -80,7 +80,7 @@ $env:WANGAI_API_BASE_URL = "https://your-gateway.example"
 pnpm tauri build
 ```
 
-Release builds require an HTTPS gateway URL. Debug builds default to loopback 8080.
+Release builds require an HTTPS gateway URL. Debug builds use the deployed WANGAI gateway by default; set `WANGAI_API_BASE_URL=http://127.0.0.1:8080` at launch to use a local server.
 Settings migrate to v14 with a `settings.pre-v14.json` backup containing legacy
 settings/usage. The old Windows Credential Manager entry is neither read nor deleted.
 There is no client-side $2 limiter, key form, BYOK fallback or model picker anymore.

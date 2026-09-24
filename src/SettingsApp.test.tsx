@@ -26,10 +26,11 @@ describe("single-source Ready Room", () => {
     expect(screen.getByRole("button", { name: /เริ่มใช้งาน/ })).toBeEnabled();
     expect(screen.queryByRole("textbox", { name: /key/i })).not.toBeInTheDocument();
   });
-  it("shows only the listening source and translation rows", () => {
+  it("shows incoming audio, our microphone, and translation directions", () => {
     const snapshot = snapshotFixture();
     render(<ReadyRoom settings={snapshot.settings} runtime={snapshot.runtime} previewMode={false} onToggleListening={vi.fn()} onOpenSourcePicker={vi.fn()} webRuntime={false} />);
     expect(screen.getByText("แหล่งเสียงที่ฟัง")).toBeInTheDocument();
+    expect(screen.getByText("ไมโครโฟนของเรา")).toBeInTheDocument();
     expect(screen.getByText("การแปล")).toBeInTheDocument();
     expect(screen.queryByText("Voice chat")).not.toBeInTheDocument();
     expect(screen.queryByText("Browser media")).not.toBeInTheDocument();
@@ -39,11 +40,45 @@ describe("single-source Ready Room", () => {
     expect(screen.queryByText("บริการ AI กลาง")).not.toBeInTheDocument();
   });
 
+  it("shows the Windows default microphone and the configured reply shortcut, including when no app is selected", () => {
+    const snapshot = snapshotFixture();
+    snapshot.settings.listeningSource = undefined;
+    snapshot.runtime.listening = false;
+    snapshot.settings.hotkeys.pushToTalk = "Mouse4";
+    const view = render(<ReadyRoom settings={snapshot.settings} runtime={snapshot.runtime} microphoneName="Microphone (USB)" previewMode={false} onToggleListening={vi.fn()} onOpenSourcePicker={vi.fn()} webRuntime={false} />);
+    expect(screen.getByText("Microphone (USB)")).toBeInTheDocument();
+    expect(screen.getByText("กด Mouse4 ค้างเพื่อพูด")).toBeInTheDocument();
+    view.rerender(<ReadyRoom settings={snapshot.settings} runtime={{ ...snapshot.runtime, microphoneActive: true }} microphoneName="Microphone (USB)" previewMode={false} onToggleListening={vi.fn()} onOpenSourcePicker={vi.fn()} webRuntime={false} />);
+    expect(screen.getByText("กำลังรับเสียง")).toBeInTheDocument();
+  });
+
+  it("warns when Windows has no default microphone and offers a rescan", () => {
+    const snapshot = snapshotFixture();
+    const refresh = vi.fn();
+    render(<ReadyRoom settings={snapshot.settings} runtime={snapshot.runtime} microphoneName={null} onRefreshMicrophone={refresh} previewMode={false} onToggleListening={vi.fn()} onOpenSourcePicker={vi.fn()} webRuntime={false} />);
+    expect(screen.getAllByText("ไม่พบไมโครโฟน").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: "ตรวจใหม่" }));
+    expect(refresh).toHaveBeenCalledOnce();
+  });
+
+  it("offers system audio only when selected app audio fails, with a way back", () => {
+    const snapshot = snapshotFixture();
+    const onCaptureModeChange = vi.fn();
+    const props = { settings: snapshot.settings, runtime: { ...snapshot.runtime, captureWarning: "ไม่ได้ยินเสียง" }, previewMode: false, onToggleListening: vi.fn(), onOpenSourcePicker: vi.fn(), onCaptureModeChange, webRuntime: false };
+    const view = render(<ReadyRoom {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: "ลองฟังเสียงทั้งเครื่อง" }));
+    expect(onCaptureModeChange).toHaveBeenCalledWith("system_output");
+    view.rerender(<ReadyRoom {...props} settings={{ ...snapshot.settings, captureMode: "system_output" }} />);
+    expect(screen.getByText(/รวมเสียงจากแอปอื่น/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "กลับไปฟังเฉพาะแอป" }));
+    expect(onCaptureModeChange).toHaveBeenCalledWith("process_tree");
+  });
+
   it("uses one change action for every application", () => {
     const snapshot = snapshotFixture();
     const open = vi.fn();
     render(<ReadyRoom settings={snapshot.settings} runtime={snapshot.runtime} previewMode={false} onToggleListening={vi.fn()} onOpenSourcePicker={open} webRuntime={false} />);
-    fireEvent.click(screen.getByRole("button", { name: "เปลี่ยน" }));
+    fireEvent.click(screen.getByRole("button", { name: "เปลี่ยนแอปที่ฟัง" }));
     expect(open).toHaveBeenCalledOnce();
   });
 

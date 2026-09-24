@@ -53,6 +53,25 @@ describe("grouped running app picker", () => {
     expect(screen.getByText(/เลือกอยู่ · เลือกแอปนี้/)).toBeInTheDocument();
   });
 
+  it("defaults to windowed apps on every opening and only searches background processes by name", () => {
+    const p = props();
+    const background = { ...appFixture(), id: "worker", displayName: "Background Player", hasWindow: false, searchNames: ["Background Player", "worker.exe"] };
+    p.apps = [p.apps[0], background];
+    const view = render(<ProcessPickerDialog {...p} />);
+    expect(screen.getByRole("status")).toHaveTextContent("แอปหลักที่เปิดอยู่ 1 รายการ");
+    expect(screen.queryByText("Background Player")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /แสดงรายการเบื้องหลัง/ })).not.toBeInTheDocument();
+    const search = screen.getByRole("textbox");
+    fireEvent.change(search, { target: { value: "worker.exe" } });
+    expect(screen.getByText("Background Player")).toBeInTheDocument();
+    fireEvent.change(search, { target: { value: "" } });
+    expect(screen.queryByText("Background Player")).not.toBeInTheDocument();
+    view.unmount();
+    render(<ProcessPickerDialog {...p} />);
+    expect(screen.getByRole("status")).toHaveTextContent("แอปหลักที่เปิดอยู่ 1 รายการ");
+    expect(screen.queryByText("Background Player")).not.toBeInTheDocument();
+  });
+
   it("shows clear only for a saved source and runs it from the picker", async () => {
     const p = { ...props(), onClear: vi.fn().mockResolvedValue(undefined) };
     const view = render(<ProcessPickerDialog {...p} />);
