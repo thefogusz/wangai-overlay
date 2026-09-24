@@ -114,7 +114,7 @@ Use a curated set of at least 300 real game utterances:
 
 ## Why hosted STT is the MVP default
 
-Local Whisper in a browser is possible but conflicts with the core UX: it downloads a large model, uses CPU/GPU beside the game, increases startup time, and varies widely by hardware. Hosted streaming STT gives the no-install version a fair performance test. A local Whisper provider remains a later cost/privacy option.
+Local ASR inference conflicts with the core UX: it downloads a model, competes with the game for CPU/GPU and memory, increases startup time, and varies by hardware. Keep STT inference on the service side. Do not add a local-model fallback or offer it as a later user-facing option.
 
 ## Project structure planned for implementation
 
