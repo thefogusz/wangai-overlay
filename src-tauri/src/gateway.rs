@@ -183,7 +183,7 @@ impl GatewayClient {
         status.retry_after_ms = Some(delay);
     }
 
-    pub async fn transcribe<T: DeserializeOwned>(&self, wav: Vec<u8>, stream: &str) -> Result<T> {
+    pub async fn transcribe<T: DeserializeOwned>(&self, wav: Vec<u8>, stream: &str, vocabulary: &[String]) -> Result<T> {
         let part = reqwest::multipart::Part::bytes(wav)
             .file_name("speech.wav")
             .mime_str("audio/wav")?;
@@ -193,7 +193,8 @@ impl GatewayClient {
                 .multipart(
                     reqwest::multipart::Form::new()
                         .part("file", part)
-                        .text("stream", stream.to_string()),
+                        .text("stream", stream.to_string())
+                        .text("vocabulary", serde_json::to_string(vocabulary)?),
                 ),
         )
         .await
@@ -291,7 +292,7 @@ mod tests {
         client.refresh_status().await;
         assert_eq!(client.status().incoming_model, "from-server");
         for stream in ["incoming", "microphone"] {
-            let _: serde_json::Value = client.transcribe(vec![1, 2, 3, 4], stream).await.unwrap();
+            let _: serde_json::Value = client.transcribe(vec![1, 2, 3, 4], stream, &[]).await.unwrap();
             let body = receive.recv().await.unwrap();
             let body = String::from_utf8_lossy(&body);
             assert!(body.contains(stream));

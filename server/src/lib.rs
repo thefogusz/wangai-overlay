@@ -300,6 +300,7 @@ async fn transcribe(
     let mut body = body.map_err(|_| fail(ErrorCode::InvalidRequest))?;
     let mut audio = None;
     let mut stream = None;
+    let mut vocabulary = None;
     while let Some(field) = body.next_field().await.map_err(multipart_error)? {
         match field.name() {
             Some("file") if audio.is_none() => {
@@ -312,6 +313,9 @@ async fn transcribe(
             Some("stream") if stream.is_none() => {
                 stream = Some(field.text().await.map_err(multipart_error)?);
             }
+            Some("vocabulary") if vocabulary.is_none() => {
+                vocabulary = Some(field.text().await.map_err(multipart_error)?);
+            }
             _ => return Err(fail(ErrorCode::InvalidRequest)),
         }
     }
@@ -322,6 +326,20 @@ async fn transcribe(
         Some("microphone") => (&state.config.microphone_model, "th"),
         _ => return Err(fail(ErrorCode::InvalidRequest)),
     };
+    let terms: Vec<String> = match vocabulary {
+        Some(value) if value.len() <= 1024 =>
+            serde_json::from_str(&value).map_err(|_| fail(ErrorCode::InvalidRequest))?,
+        Some(_) => return Err(fail(ErrorCode::InvalidRequest)),
+        None => Vec::new(),
+    };
+    if terms.len() > 20 || (language != "en" && !terms.is_empty())
+        || terms.iter().any(|term| {
+            let word_count = term.split_whitespace().count();
+            term.len() > 40 || word_count == 0 || word_count > 3
+                || !term.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, ' ' | '-' | '\''))
+        }) {
+        return Err(fail(ErrorCode::InvalidRequest));
+    }
     let _permit = state
         .slots
         .try_acquire()
@@ -330,12 +348,15 @@ async fn transcribe(
         .file_name("speech.wav")
         .mime_str("audio/wav")
         .unwrap();
-    let form = reqwest::multipart::Form::new()
+    let mut form = reqwest::multipart::Form::new()
         .part("file", file)
         .text("model", model.clone())
         .text("language", language)
         .text("response_format", "verbose_json")
         .text("temperature", "0");
+    if !terms.is_empty() {
+        form = form.text("prompt", format!("Game names and terms: {}.", terms.join(", ")));
+    }
     let mut result = state
         .upstream(
             0,
