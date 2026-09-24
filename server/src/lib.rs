@@ -278,6 +278,7 @@ async fn status(State(state): State<Arc<Gateway>>) -> Json<ServiceStatus> {
         microphone_model: state.config.microphone_model.clone(),
         translation_model: state.config.translation_model.clone(),
         retry_after_ms: error.and_then(|e| e.0.retry_after_ms),
+        stt_vocabulary_supported: true,
     })
 }
 

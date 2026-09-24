@@ -39,6 +39,8 @@ pub struct ServiceStatus {
     pub microphone_model: String,
     pub translation_model: String,
     pub retry_after_ms: Option<u64>,
+    #[serde(default)]
+    pub stt_vocabulary_supported: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
