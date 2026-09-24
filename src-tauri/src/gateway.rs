@@ -183,7 +183,12 @@ impl GatewayClient {
         status.retry_after_ms = Some(delay);
     }
 
-    pub async fn transcribe<T: DeserializeOwned>(&self, wav: Vec<u8>, stream: &str, vocabulary: &[String]) -> Result<T> {
+    pub async fn transcribe<T: DeserializeOwned>(
+        &self,
+        wav: Vec<u8>,
+        stream: &str,
+        vocabulary: &[String],
+    ) -> Result<T> {
         let part = reqwest::multipart::Part::bytes(wav)
             .file_name("speech.wav")
             .mime_str("audio/wav")?;
@@ -215,7 +220,10 @@ mod tests {
     use super::*;
     #[test]
     fn debug_uses_live_gateway_by_default_and_allows_local_override() {
-        assert_eq!(configured_base_url(true, None, None), DEVELOPMENT_GATEWAY_URL);
+        assert_eq!(
+            configured_base_url(true, None, None),
+            DEVELOPMENT_GATEWAY_URL
+        );
         assert_eq!(
             configured_base_url(true, Some("http://127.0.0.1:8080"), None),
             "http://127.0.0.1:8080"
@@ -225,7 +233,11 @@ mod tests {
             "https://compiled.example"
         );
         assert_eq!(
-            configured_base_url(false, Some("https://runtime.example"), Some("https://compiled.example")),
+            configured_base_url(
+                false,
+                Some("https://runtime.example"),
+                Some("https://compiled.example")
+            ),
             "https://compiled.example"
         );
     }
@@ -292,10 +304,21 @@ mod tests {
         client.refresh_status().await;
         assert_eq!(client.status().incoming_model, "from-server");
         for stream in ["incoming", "microphone"] {
-            let _: serde_json::Value = client.transcribe(vec![1, 2, 3, 4], stream, &[]).await.unwrap();
+            let vocabulary = if stream == "incoming" {
+                vec!["Mistfall Hunter".to_string()]
+            } else {
+                Vec::new()
+            };
+            let _: serde_json::Value = client
+                .transcribe(vec![1, 2, 3, 4], stream, &vocabulary)
+                .await
+                .unwrap();
             let body = receive.recv().await.unwrap();
             let body = String::from_utf8_lossy(&body);
             assert!(body.contains(stream));
+            if stream == "incoming" {
+                assert!(body.contains("Mistfall Hunter"));
+            }
             assert!(!body.contains("name=\"model\""));
             assert!(!body.contains("name=\"key\""));
         }
