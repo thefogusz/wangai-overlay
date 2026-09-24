@@ -192,15 +192,17 @@ impl GatewayClient {
         let part = reqwest::multipart::Part::bytes(wav)
             .file_name("speech.wav")
             .mime_str("audio/wav")?;
+        let mut form = reqwest::multipart::Form::new()
+            .part("file", part)
+            .text("stream", stream.to_string());
+        if stream == "incoming" && !vocabulary.is_empty() && self.status().stt_vocabulary_supported
+        {
+            form = form.text("vocabulary", serde_json::to_string(vocabulary)?);
+        }
         self.response(
             self.client
                 .post(format!("{}/v1/transcriptions", self.base_url))
-                .multipart(
-                    reqwest::multipart::Form::new()
-                        .part("file", part)
-                        .text("stream", stream.to_string())
-                        .text("vocabulary", serde_json::to_string(vocabulary)?),
-                ),
+                .multipart(form),
         )
         .await
     }
@@ -277,6 +279,7 @@ mod tests {
                         state: "connected".into(),
                         message: "connected".into(),
                         incoming_model: "from-server".into(),
+                        stt_vocabulary_supported: true,
                         ..Default::default()
                     })
                 }),
@@ -318,6 +321,8 @@ mod tests {
             assert!(body.contains(stream));
             if stream == "incoming" {
                 assert!(body.contains("Mistfall Hunter"));
+            } else {
+                assert!(!body.contains("name=\"vocabulary\""));
             }
             assert!(!body.contains("name=\"model\""));
             assert!(!body.contains("name=\"key\""));
@@ -325,5 +330,43 @@ mod tests {
         server.abort();
         client.refresh_status().await;
         assert_eq!(client.status().state, "offline");
+    }
+
+    #[tokio::test]
+    async fn legacy_gateway_receives_no_vocabulary_field() {
+        use axum::{
+            body::Bytes,
+            routing::{get, post},
+            Json, Router,
+        };
+        let (send, mut receive) = tokio::sync::mpsc::channel(1);
+        let app = Router::new()
+            .route("/v1/status", get(|| async {
+                Json(serde_json::json!({"state":"connected","message":"ok","incomingModel":"old","microphoneModel":"old","translationModel":"old","retryAfterMs":null}))
+            }))
+            .route("/v1/transcriptions", post(move |body: Bytes| {
+                let send = send.clone();
+                async move {
+                    send.send(body.to_vec()).await.unwrap();
+                    Json(serde_json::json!({"text":"go"}))
+                }
+            }));
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let client = GatewayClient::with_url(
+            &format!("http://{}", listener.local_addr().unwrap()),
+            uuid::Uuid::new_v4().to_string(),
+            true,
+        )
+        .unwrap();
+        let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+        client.refresh_status().await;
+        assert!(!client.status().stt_vocabulary_supported);
+        let _: serde_json::Value = client
+            .transcribe(vec![1, 2, 3, 4], "incoming", &["Mistfall Hunter".into()])
+            .await
+            .unwrap();
+        let body = String::from_utf8_lossy(&receive.recv().await.unwrap()).to_string();
+        assert!(!body.contains("name=\"vocabulary\""));
+        server.abort();
     }
 }

@@ -2,6 +2,8 @@
 
 This trial changes only the desktop-to-gateway speech path. Incoming audio may pass up to 20 short English game terms from the user's existing glossary to the STT provider as a prompt. The gateway validates the terms and selects the provider model and credential as before. Microphone STT does not receive a prompt.
 
+The Desktop sends vocabulary only when `/v1/status` explicitly advertises `sttVocabularySupported: true`. An older deployed Gateway does not advertise this capability, so the Desktop omits the new multipart field and keeps ordinary STT working. Deploying the matching Gateway is required before vocabulary hints take effect.
+
 STT remains serialized per stream. After STT finishes, translation may continue while the next utterance is transcribed. Up to four utterances per stream may occupy the bounded translation stage; the existing STT queue still accepts one running and one waiting job. Translation results remain matched to their segment IDs, and generation checks reject results from a previous source/session.
 
 ## Measure the trial

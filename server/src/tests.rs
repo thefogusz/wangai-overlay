@@ -245,12 +245,9 @@ async fn health_and_status_are_safe_and_capacity_is_bounded() {
         .unwrap();
     let bytes = status.into_body().collect().await.unwrap().to_bytes();
     assert!(!String::from_utf8_lossy(&bytes).contains("secret"));
-    assert_eq!(
-        serde_json::from_slice::<ServiceStatus>(&bytes)
-            .unwrap()
-            .state,
-        "connected"
-    );
+    let status: ServiceStatus = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(status.state, "connected");
+    assert!(status.stt_vocabulary_supported);
     let _slots = state.slots.acquire_many(32).await.unwrap();
     let result = app
         .oneshot(request(
