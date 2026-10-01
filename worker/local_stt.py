@@ -5,6 +5,7 @@ The two streams share one recognizer and execute serially.
 """
 import argparse
 import json
+import os
 import struct
 import sys
 from pathlib import Path
@@ -70,7 +71,7 @@ def serve(recognizer, source, output):
         output.write(json.dumps(event, ensure_ascii=True) + "\n")
         output.flush()
 
-    emit({"ready": True})
+    emit({"ready": True, "pid": os.getpid()})
     while True:
         request = read_request(source)
         if request is None:

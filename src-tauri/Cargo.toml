@@ -11,6 +11,8 @@ name = "gamelingo_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
+# Opt-in preview; scripts/start-local-stt.ps1 builds this feature.
+local-stt = []
 # Isolated installer QA only; release workflow rejects this feature.
 release-test = ["wangai-portable/release-test"]
 

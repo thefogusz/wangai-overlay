@@ -37,11 +37,15 @@ pub fn shutdown(app: &AppHandle) -> Result<(), String> {
                 // Invalidates every pending result before touching native capture.
                 state.ai_stt.reset_stream(StreamKind::Incoming);
                 state.ai_stt.reset_stream(StreamKind::Microphone);
+                #[cfg(feature = "local-stt")]
+                let local_result = state.local_stt.stop().map_err(|e| e.to_string());
                 let worker_result = state
                     .worker
                     .stop()
                     .map_err(|_| "หยุด Silero worker ไม่สำเร็จ จึงยังไม่ติดตั้งอัปเดต".to_string());
                 state.audio.stop_all();
+                #[cfg(feature = "local-stt")]
+                let worker_result = worker_result.and(local_result);
                 state.update_runtime(|r| {
                     r.listening = false;
                     r.microphone_active = false;

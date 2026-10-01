@@ -1,5 +1,10 @@
 fn main() {
     use base64::Engine;
+    assert!(
+        !(std::env::var("PROFILE").as_deref() == Ok("release")
+            && std::env::var_os("CARGO_FEATURE_LOCAL_STT").is_some()),
+        "Local STT is a development preview. Build with --debug; release packaging of the local model is not yet supported."
+    );
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows")
         && std::env::var("PROFILE").as_deref() == Ok("debug")
     {

@@ -60,13 +60,15 @@ pub struct WebCompanionManager {
 
 impl WebCompanionManager {
     pub fn start(app: AppHandle) -> Result<Self> {
-        let bind_address = companion_bind_address(cfg!(debug_assertions));
+        // The local-STT preview embeds its UI and runs without a Vite server.
+        let development = cfg!(all(debug_assertions, not(feature = "local-stt")));
+        let bind_address = companion_bind_address(development);
         let listener =
-            tauri::async_runtime::block_on(bind_companion_listener(cfg!(debug_assertions)))
+            tauri::async_runtime::block_on(bind_companion_listener(development))
                 .with_context(|| format!("เปิด Local Web Companion ที่ {bind_address} ไม่สำเร็จ"))?;
         let actual_address = listener.local_addr()?;
         let server_origin = format!("http://{actual_address}");
-        let public_origin = if cfg!(debug_assertions) {
+        let public_origin = if development {
             "http://127.0.0.1:1420".to_string()
         } else {
             server_origin.clone()

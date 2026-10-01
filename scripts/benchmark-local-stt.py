@@ -12,6 +12,34 @@ import time
 import wave
 
 
+def peak_memory_mb(pid):
+    if os.name != "nt":
+        return None
+    import ctypes
+    from ctypes import wintypes
+    class Counters(ctypes.Structure):
+        _fields_ = [("cb", wintypes.DWORD), ("faults", wintypes.DWORD)] + [
+            (name, ctypes.c_size_t) for name in ("peak", "working", "quota_peak_paged", "quota_paged", "quota_peak_nonpaged", "quota_nonpaged", "pagefile", "peak_pagefile")
+        ]
+    counters = Counters()
+    counters.cb = ctypes.sizeof(counters)
+    get_memory = ctypes.WinDLL("psapi").GetProcessMemoryInfo
+    get_memory.argtypes = [wintypes.HANDLE, ctypes.POINTER(Counters), wintypes.DWORD]
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    kernel.OpenProcess.restype = wintypes.HANDLE
+    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    handle = kernel.OpenProcess(0x1010, False, pid)
+    if not handle:
+        raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        if not get_memory(handle, ctypes.byref(counters), counters.cb):
+            raise ctypes.WinError()
+    finally:
+        kernel.CloseHandle(handle)
+    return round(counters.peak / (1024 * 1024), 1)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("wav", nargs="+", type=Path)
@@ -33,9 +61,10 @@ def main():
     threading.Thread(target=read, daemon=True).start()
     try:
         ready = events.get(timeout=60)
-        if ready != {"ready": True}:
+        if not ready.get("ready"):
             raise RuntimeError(ready)
-        print(json.dumps({"load_seconds": round(time.perf_counter() - started, 3), "pid": process.pid}), flush=True)
+        pid = ready["pid"]  # Windows venv python.exe may be only a launcher.
+        print(json.dumps({"load_seconds": round(time.perf_counter() - started, 3), "pid": pid}), flush=True)
         for path in args.wav:
             with wave.open(str(path), "rb") as audio:
                 assert (audio.getnchannels(), audio.getsampwidth(), audio.getframerate()) == (1, 2, 16000)
@@ -47,7 +76,7 @@ def main():
             if "error" in result:
                 raise RuntimeError(result)
             elapsed = time.perf_counter() - started
-            print(json.dumps({"file": path.name, "audio_seconds": len(pcm) / 32000, "asr_seconds": round(elapsed, 3), **result}, ensure_ascii=True), flush=True)
+            print(json.dumps({"file": path.name, "audio_seconds": len(pcm) / 32000, "asr_seconds": round(elapsed, 3), "peak_working_set_mb": peak_memory_mb(pid), **result}, ensure_ascii=True), flush=True)
     finally:
         process.kill()
         process.wait(timeout=5)

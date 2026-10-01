@@ -1,5 +1,6 @@
 import io
 import json
+import os
 import struct
 import unittest
 
@@ -36,7 +37,7 @@ class LocalSttTests(unittest.TestCase):
         output = io.StringIO()
         serve(recognizer, source, output)
         events = [json.loads(line) for line in output.getvalue().splitlines()]
-        self.assertEqual(events, [{"ready": True}, {"text": ""}, {"text": "ไปทางซ้าย"}])
+        self.assertEqual(events, [{"ready": True, "pid": os.getpid()}, {"text": ""}, {"text": "ไปทางซ้าย"}])
         self.assertEqual(recognizer.language, "th")
 
     def test_inference_failure_is_explicit_not_a_successful_empty_transcript(self):

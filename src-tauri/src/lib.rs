@@ -5,6 +5,8 @@ mod commands;
 mod gateway;
 mod hotkeys;
 mod lifecycle;
+#[cfg(feature = "local-stt")]
+mod local_stt;
 mod models;
 mod pipeline;
 mod portable_runtime;
@@ -88,6 +90,22 @@ pub fn run() {
             release_test::checkpoint(app.handle(), "hotkeys-registered");
 
             let state = app.state::<AppState>();
+            #[cfg(feature = "local-stt")]
+            {
+                let handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    let state = handle.state::<AppState>();
+                    let message = match state.local_stt.warm_up(&handle).await {
+                        Ok(()) => "Local STT พร้อม: ถอดเสียงบนเครื่อง / แปลผ่าน Grok".to_string(),
+                        Err(error) => {
+                            state.update_runtime(|runtime| runtime.last_error = Some(error.to_string()));
+                            format!("Local STT ยังไม่พร้อม: {error}")
+                        }
+                    };
+                    let _ = tauri::Emitter::emit(&handle, "pipeline-status", message);
+                    let _ = tauri::Emitter::emit(&handle, "runtime-state", state.update_runtime(|_| {}));
+                });
+            }
             if let Err(error) = state.worker.start(app.handle().clone(), &settings) {
                 state.update_runtime(|runtime| {
                     runtime.worker_ready = false;

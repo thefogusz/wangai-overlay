@@ -290,7 +290,7 @@ fn write_frame(mut writer: impl Write, message: WorkerCommand) -> std::io::Resul
 }
 
 #[cfg(debug_assertions)]
-fn resolve_worker_path(app: &AppHandle) -> Result<PathBuf> {
+pub(crate) fn resolve_worker_path(app: &AppHandle) -> Result<PathBuf> {
     let dev_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .parent()
         .expect("src-tauri has parent")
@@ -308,7 +308,7 @@ fn resolve_worker_path(app: &AppHandle) -> Result<PathBuf> {
 }
 
 #[cfg(debug_assertions)]
-fn resolve_python(worker_path: &Path) -> PathBuf {
+pub(crate) fn resolve_python(worker_path: &Path) -> PathBuf {
     if let Ok(value) = std::env::var("GAMELINGO_PYTHON") {
         let path = PathBuf::from(value);
         if path.exists() {

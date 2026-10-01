@@ -7,6 +7,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Context, Result};
+#[cfg(any(not(feature = "local-stt"), test))]
 use serde::Deserialize;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::Semaphore;
@@ -428,7 +429,7 @@ impl AiSttManager {
             }
 
             let busy = manager.busy_jobs.fetch_add(1, Ordering::AcqRel) + 1;
-            set_stt_busy(&app, busy > 0, "กำลังส่งเสียงให้ บริการ AI");
+            set_stt_busy(&app, busy > 0, if cfg!(feature = "local-stt") { "กำลังถอดเสียงบนเครื่อง" } else { "กำลังส่งเสียงให้ บริการ AI" });
             let result = manager.process_job(&app, utterance).await;
             let remaining_busy = manager.busy_jobs.fetch_sub(1, Ordering::AcqRel) - 1;
             drop(permit);
@@ -489,6 +490,12 @@ impl AiSttManager {
             );
             return Ok(());
         }
+        #[cfg(feature = "local-stt")]
+        let (transcript_text, low_confidence) = (
+            state.local_stt.transcribe(app, job.samples.clone(), language).await?,
+            false, // Qwen exposes text, not Whisper confidence scores. VAD/silence gates still apply.
+        );
+        #[cfg(not(feature = "local-stt"))]
         let transcription: TranscriptionResponse = state
             .gateway
             .transcribe(
@@ -500,11 +507,13 @@ impl AiSttManager {
                 },
             )
             .await?;
+        #[cfg(not(feature = "local-stt"))]
+        let (transcript_text, low_confidence) = (transcription.text.clone(), transcription.is_low_confidence());
 
         if self.generation(job.stream) != job.generation {
             return Ok(());
         }
-        if transcription.is_low_confidence() {
+        if low_confidence {
             if job.diagnostic_probe {
                 report_probe_result(
                     app,
@@ -518,7 +527,7 @@ impl AiSttManager {
             );
             return Ok(());
         }
-        let text = transcription.text.trim();
+        let text = transcript_text.trim();
         if text.is_empty() {
             if job.diagnostic_probe {
                 report_probe_result(
@@ -613,12 +622,15 @@ impl AiSttManager {
 }
 
 #[derive(Debug, Deserialize)]
+#[cfg(any(not(feature = "local-stt"), test))]
 pub struct TranscriptionResponse {
+    #[cfg_attr(feature = "local-stt", allow(dead_code))]
     text: String,
     #[serde(default)]
     segments: Vec<TranscriptionSegment>,
 }
 
+#[cfg(any(not(feature = "local-stt"), test))]
 impl TranscriptionResponse {
     fn is_low_confidence(&self) -> bool {
         if self.segments.is_empty() {
@@ -644,6 +656,7 @@ impl TranscriptionResponse {
 }
 
 #[derive(Debug, Deserialize)]
+#[cfg(any(not(feature = "local-stt"), test))]
 struct TranscriptionSegment {
     #[serde(default)]
     start: Option<f32>,
@@ -984,6 +997,7 @@ pub fn f32_to_pcm16(sample: f32) -> i16 {
     }
 }
 
+#[cfg(any(not(feature = "local-stt"), test))]
 pub fn encode_wav_pcm16(samples: &[i16], sample_rate: u32) -> Vec<u8> {
     let data_len = samples.len().saturating_mul(2).min(u32::MAX as usize) as u32;
     let mut wav = Vec::with_capacity(44 + data_len as usize);
