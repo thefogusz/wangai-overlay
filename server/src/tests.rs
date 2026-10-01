@@ -3,6 +3,35 @@ use axum::{body::Body, http::Request};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 
+#[tokio::test]
+async fn local_stt_gateway_needs_only_translation_credentials_and_rejects_audio() {
+    let (url, task, calls) = mock(StatusCode::OK, json!({"choices":[{"message":{"content":"ไปทางซ้าย"}}]})).await;
+    let config = Config::load(|key| match key {
+        "STT_MODE" => Some("local".into()),
+        "TRANSLATION_BASE_URL" => Some(url.clone()),
+        "TRANSLATION_API_KEY" => Some("secret-not-for-clients".into()),
+        "TRANSLATION_MODEL" => Some("grok-4.20-0309-non-reasoning".into()),
+        "DATABASE_PATH" => Some(":memory:".into()),
+        _ => None,
+    }).unwrap();
+    let gateway = Gateway::new(config).unwrap();
+    let app = router(gateway);
+    let translated = app.clone().oneshot(request("/v1/translations", json!({"text":"go left", "from":"en", "to":"th"}))).await.unwrap();
+    assert_eq!(translated.status(), StatusCode::OK);
+    let text: Value = serde_json::from_slice(&translated.into_body().collect().await.unwrap().to_bytes()).unwrap();
+    assert_eq!(text["text"], "ไปทางซ้าย");
+    // A successful translation alone is sufficient: no cloud STT probe.
+    let status = app.clone().oneshot(Request::get("/v1/status").body(Body::empty()).unwrap()).await.unwrap();
+    let status: Value = serde_json::from_slice(&status.into_body().collect().await.unwrap().to_bytes()).unwrap();
+    assert_eq!(status["state"], "ready");
+    let rejected = app.oneshot(request("/v1/transcriptions", json!({}))).await.unwrap();
+    assert!(!rejected.status().is_success());
+    let body: Value = serde_json::from_slice(&rejected.into_body().collect().await.unwrap().to_bytes()).unwrap();
+    assert_eq!(body["code"], "unsupported_model");
+    assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+    task.abort();
+}
+
 fn config(url: &str) -> Config {
     Config::load(|key| match key {
         "STT_BASE_URL" | "TRANSLATION_BASE_URL" => Some(url.into()),
