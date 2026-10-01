@@ -4,14 +4,18 @@
 เป็น source preview สำหรับพัฒนาต่อ ยังไม่ใช่ตัวติดตั้งพร้อมแจกผู้ใช้ทั่วไป
 
 **Local STT ทดลอง:** [คู่มือส่งต่อสำหรับนักพัฒนา](docs/local-stt-handoff.md)
-มี Qwen/Whisper บน CPU แล้วส่งข้อความให้ gateway แปล เป็น source preview ที่แยกด้วย feature `local-stt`
+ตัวหลักของรุ่นนี้ใช้ **Whisper base Q5_1 ผ่าน whisper.cpp** ถอดเสียงบน CPU และส่งเฉพาะข้อความให้ **Grok ผ่าน AI Gateway** แปลภาษา
+ตรวจจับเสียงพูดด้วย **Silero VAD ผ่าน ONNX Runtime** โดยไม่โหลด PyTorch
+
+เริ่มทดลองด้วย `scripts/setup-local-stt.ps1 -Preset base` แล้วเปิด `Start-WANGAI-Whisper.cmd` ตามคู่มือนักพัฒนาด้านบน
+การรัน `pnpm tauri dev` โดยไม่เปิด feature `local-stt` จะเป็นโหมด Cloud เดิม
 
 WANGAI เป็น Windows overlay สำหรับแปลเสียงพูดแบบ realtime ผู้ใช้เลือกแอปที่จะฟังครั้งละหนึ่งโปรแกรม เช่น Mistfall, Discord หรือ Chrome ผ่าน WASAPI Application Loopback โดยไม่ inject DLL และไม่แตะ memory/renderer พร้อม Local Web Companion ที่ควบคุม Desktop engine จาก browser บนเครื่องเดียวกัน
 
 - เสียงเกมอังกฤษ: แสดงสถานะกำลังฟัง แล้วแสดง English final + คำแปลไทยเมื่อจบวลี
 - กด `F9` ค้างแล้วพูดไทย: ถอดเสียงและแปลเป็นอังกฤษ พร้อมปุ่ม Copy / `F10`
-- ระบบมี audio stream จริงเพียง `INCOMING` และ `MICROPHONE`; F9 ใช้จังหวะกด/ปล่อยเป็นขอบเขตวลี แล้วส่งเฉพาะวลีที่จบแล้วไปบริการ AI กลาง
-- Overlay ติดป้ายตามแอปที่เลือก เช่น `MISTFALL`, `DISCORD`, `CHROME` หรือ `MIXED`; Rescue Scan ใช้ PCM ต้นฉบับและกรอง activity/confidence ก่อนยอมรับผล
+- ระบบมี audio stream จริงเพียง `INCOMING` และ `MICROPHONE`; F9 ใช้จังหวะกด/ปล่อยเป็นขอบเขตวลี แล้วถอดเสียงเมื่อจบวลี ก่อนส่งข้อความไปแปลในโหมด Local
+- Overlay ติดป้ายตามแอปที่เลือก เช่น `MISTFALL`, `DISCORD`, `CHROME` หรือ `MIXED`; Rescue Scan ใช้ PCM ต้นฉบับ; โหมด Local ยังไม่มีคะแนน confidence แบบบริการ Cloud
 - ส่งเฉพาะ final transcript ผ่านบริการ AI กลาง เพื่อแปลภาษา และไม่บันทึกไฟล์เสียง
 - รองรับ Borderless และ Windowed; ไม่รองรับ Exclusive Fullscreen
 
@@ -24,18 +28,23 @@ Axum Local Web Companion · 127.0.0.1 · session cookie
        ↕
 Rust: process picker · WASAPI · hotkeys · HTTPS AI gateway client
        ↕ framed binary stdin / JSONL stdout
-Python 3.12: Silero VAD only
+Silero VAD: Python + ONNX Runtime (ไม่ใช้ PyTorch)
+Whisper base Q5_1: whisper.cpp บน CPU
+       ↕ ข้อความ
+AI Gateway → Grok แปลภาษา
 ```
 
-Rust downmix/resample เป็น PCM mono 16 kHz และส่งเสียงพร้อม sample cursor ให้ Python ผ่าน stdin เมื่อ VAD จบวลี Rust จะตัดช่วงเสียงตาม cursor แล้วสร้าง WAV ในหน่วยความจำเพื่อส่งผ่าน HTTPS ไปยัง WANGAI AI Gateway ส่วน provider key อยู่ใน env ของ server เท่านั้น ไม่เข้าสู่ Desktop/React/Python/Local Web Companion
+Rust downmix/resample เป็น PCM mono 16 kHz และส่งเสียงพร้อม sample cursor ให้ตัวตรวจจับเสียงผ่าน stdin ในโหมด Local เมื่อจบวลี Rust จะส่ง PCM ให้ Whisper บนเครื่อง แล้วส่งเฉพาะข้อความไปยัง WANGAI AI Gateway โหมด Cloud เดิมจึงจะส่ง WAV ในหน่วยความจำไปถอดเสียงผ่าน gateway ส่วน provider key อยู่ใน env ของ server เท่านั้น ไม่เข้าสู่ Desktop/React/Python/Local Web Companion
 
 Local Web Companion bind เฉพาะ `127.0.0.1`; production ขอ port ว่างจาก Windows ทุกครั้งและคืน port เมื่อ Desktop ปิด ปุ่ม **เปิด Web App** แลก token ใน URL fragment เป็น `HttpOnly`/`SameSite=Strict` cookie ทั้ง Desktop และหน้าเว็บใช้ AI กลางโดยไม่มีฟอร์ม keyและใช้งานไม่ได้เมื่อ Desktop engine ปิด
 
-## ดาวน์โหลดสำหรับผู้ใช้ Windows — Portable 0.3.0 Pre-release
+## รุ่นเก่าจาก upstream — Portable 0.3.0 Pre-release
+
+ส่วนนี้เป็นข้อมูลรุ่นเดิม ไม่ใช่ตัวติดตั้ง Local STT 0.6
 
 ใน [0.3.0 Pre-release](https://github.com/HectorRussia/wangai-overlay/releases/tag/v0.3.0) เลือกไฟล์
 `WANGAI_0.3.0_x64-portable.exe` แล้วกด **เตรียมและเปิด WANGAI**
-รุ่นนี้ดาวน์โหลดเอง ยังไม่ส่งผ่านอัปเดตอัตโนมัติปกติ และ **0.2.2 ยังคงเป็น Latest**
+รุ่นนี้ดาวน์โหลดเอง ยังไม่ส่งผ่านอัปเดตอัตโนมัติปกติ ตามกระบวนการเผยแพร่ของรุ่นเดิม
 เจ้าของยืนยันการใช้งาน Preview แล้ว แต่ clean Windows, Process Tree และการอัปเดตบางกรณียังทดสอบไม่ครบ
 โปรดอ่าน [ข้อจำกัด Pre-release](docs/releases/v0.3.0.md) ก่อนใช้งาน
 ตัวเปิดธีมเข้ม–เขียวจะจัดโฟลเดอร์ให้ รวม Python, Silero offline และ WebView2 Fixed Version แล้ว
@@ -49,7 +58,9 @@ Local Web Companion bind เฉพาะ `127.0.0.1`; production ขอ port ว
 ไม่มีการถอนรุ่นเดิมหรือลบ settings ต้นฉบับ และไม่ใช้ NSIS updater กับ Portable
 ดู [คู่มือ Portable / migration / recovery](docs/windows-portable.md)
 
-## ติดตั้งสำหรับพัฒนา
+## พัฒนาโหมด Cloud เดิม
+
+สำหรับ Local STT 0.6 ใช้ [คู่มือนักพัฒนา](docs/local-stt-handoff.md)
 
 ต้องมี Windows 11, Node.js, pnpm, Rust MSVC toolchain และ Visual Studio C++ Build Tools
 
@@ -59,7 +70,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 pnpm tauri dev
 ```
 
-สคริปต์ bootstrap ใช้ `uv` ดาวน์โหลด Python 3.12 ให้โดยอัตโนมัติถ้ามี uv; ถ้าไม่มี uv ต้องติดตั้ง Python 3.12 ให้ `py -3.12` เรียกได้ Silero VAD จะเตรียมโมเดล ONNX เมื่อเปิด worker ครั้งแรก
+สคริปต์ bootstrap ใช้ `uv` ดาวน์โหลด Python 3.12 ให้โดยอัตโนมัติถ้ามี uv; ถ้าไม่มี uv ต้องติดตั้ง Python 3.12 ให้ `py -3.12` เรียกได้ สคริปต์ติดตั้งไฟล์โมเดล Silero ONNX ล่วงหน้า โดยไม่ติดตั้ง PyTorch
 
 สำหรับเช็ก UI/IPC โดยไม่โหลด Silero:
 
