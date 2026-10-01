@@ -10,6 +10,10 @@ WORKER = ROOT / "output/whisper-build/Release/wangai-whisper.exe"
 MODEL = ROOT / "output/models/ggml-base-q5_1.bin"
 
 
+@unittest.skipUnless(
+    WORKER.is_file() and MODEL.is_file(),
+    "Native Whisper integration tests require scripts/setup-whisper.ps1 -Model base",
+)
 class WhisperWorkerTests(unittest.TestCase):
     def run_frames(self, data):
         result = subprocess.run(
