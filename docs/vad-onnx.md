@@ -31,3 +31,8 @@ the new worker does not load them, and fresh setup/packaging does not install th
 Run `python -m unittest discover -s worker -v` in the configured environment.
 The new subprocess test explicitly rejects imports of torch and torchaudio,
 loads the real model, and exercises inference and state reset.
+
+Validation also passed all 18 worker tests in a fresh Python 3.12 packaging
+environment with no torch installed (Silero asset 6.2.1). The frozen worker
+passed real-model offline startup, Unicode/spaced path, reset and binary-frame
+smoke tests. This packages the worker only, not a full local-STT installer.
