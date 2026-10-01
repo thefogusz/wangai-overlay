@@ -493,7 +493,7 @@ impl AiSttManager {
         #[cfg(feature = "local-stt")]
         let (transcript_text, low_confidence) = (
             state.local_stt.transcribe(app, job.samples.clone(), language).await?,
-            false, // Qwen exposes text, not Whisper confidence scores. VAD/silence gates still apply.
+            false, // Local protocol returns text only. VAD/silence gates still apply.
         );
         #[cfg(not(feature = "local-stt"))]
         let transcription: TranscriptionResponse = state

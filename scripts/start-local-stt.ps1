@@ -1,10 +1,10 @@
-param([switch]$Build)
+param([switch]$Build, [ValidateSet('base','small','qwen')][string]$Preset = 'base')
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $ServerRoot = Join-Path $ProjectRoot 'server'
 $GatewayExe = Join-Path $ServerRoot 'target\debug\wangai-server.exe'
 $PreviewRoot = Join-Path $ProjectRoot 'output\local-stt-preview'
-$DesktopExe = Join-Path $PreviewRoot 'WANGAI-Local.exe'
+$DesktopExe = Join-Path $PreviewRoot 'WANGAI-Whisper.exe'
 $WorkerPython = Join-Path $ProjectRoot '.venv\Scripts\python.exe'
 function Check-Exit { if ($LASTEXITCODE -ne 0) { throw 'Local preview build failed' } }
 if (-not (Test-Path -LiteralPath (Join-Path $ServerRoot '.env'))) {
@@ -14,9 +14,18 @@ if (-not (Test-Path -LiteralPath (Join-Path $ServerRoot '.env'))) {
 $KeyLine = Get-Content -LiteralPath (Join-Path $ServerRoot '.env') | Where-Object { $_ -match '^TRANSLATION_API_KEY=.+$' }
 if (-not $KeyLine) { throw "Add your Grok key to $ServerRoot\.env first." }
 if (-not (Test-Path -LiteralPath $WorkerPython)) { throw 'Run scripts/setup-local-stt.ps1 first.' }
+if ($Preset -ne 'qwen') {
+    if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot 'output\whisper-build\Release\wangai-whisper.exe'))) {
+        throw 'Run scripts/setup-whisper.ps1 first.'
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $ProjectRoot "output\models\ggml-$Preset-q5_1.bin"))) {
+        throw "Run scripts/setup-whisper.ps1 -Model $Preset first."
+    }
+}
 Push-Location $ProjectRoot
 try {
     $env:GAMELINGO_PYTHON = $WorkerPython
+    $env:WANGAI_LOCAL_STT_PRESET = $Preset
     $env:WANGAI_API_BASE_URL = 'http://127.0.0.1:18080'
     if ($Build -or -not (Test-Path -LiteralPath $DesktopExe) -or -not (Test-Path -LiteralPath $GatewayExe)) {
         cargo build --manifest-path server/Cargo.toml

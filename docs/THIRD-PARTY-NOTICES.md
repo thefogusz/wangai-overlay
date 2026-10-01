@@ -21,3 +21,10 @@ Microsoft's supplied `show_third_party_software_licenses.bat` describes how to o
 the runtime's built-in credits; WANGAI does not automatically run this script.
 See https://developer.microsoft.com/en-us/microsoft-edge/webview2/ for the runtime
 distribution and applicable Microsoft terms. WebView2 is updated only with a WANGAI release.
+
+The opt-in local STT preview additionally builds whisper.cpp v1.9.4 (MIT), including
+GGML (MIT) and nlohmann/json (MIT), from the pinned upstream checkout under
+`output/whisper-src`. Original license texts remain in that checkout. Whisper Q5_1
+weights are derived from OpenAI Whisper (MIT) and downloaded from ggerganov's
+whisper.cpp model repository at a pinned revision with SHA-256 verification.
+This source-tree preview is not included in the production portable package.

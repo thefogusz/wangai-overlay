@@ -15,8 +15,47 @@ use tauri::AppHandle;
 #[cfg(not(debug_assertions))]
 use tauri::Manager;
 
-pub const MODEL: &str = "Qwen3-ASR-0.6B INT8 (local CPU)";
-const MODEL_DIRECTORY: &str = "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25";
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Preset {
+    Base,
+    Small,
+    Qwen,
+}
+
+impl Preset {
+    fn parse(value: &str) -> Result<Self> {
+        match value {
+            "base" => Ok(Self::Base),
+            "small" => Ok(Self::Small),
+            "qwen" => Ok(Self::Qwen),
+            _ => bail!("Unknown local STT preset; choose base, small or qwen"),
+        }
+    }
+    fn label(self) -> &'static str {
+        match self {
+            Self::Base => "Whisper base Q5_1 (local CPU)",
+            Self::Small => "Whisper small Q5_1 (local CPU)",
+            Self::Qwen => "Qwen3-ASR-0.6B INT8 (local CPU)",
+        }
+    }
+    fn file(self) -> &'static str {
+        match self {
+            Self::Base => "ggml-base-q5_1.bin",
+            Self::Small => "ggml-small-q5_1.bin",
+            Self::Qwen => "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25",
+        }
+    }
+}
+
+fn preset() -> Result<Preset> {
+    Preset::parse(&std::env::var("WANGAI_LOCAL_STT_PRESET").unwrap_or_else(|_| "base".into()))
+}
+
+pub fn model_name() -> &'static str {
+    preset()
+        .map(Preset::label)
+        .unwrap_or("Invalid local STT preset")
+}
 const RESPONSE_TIMEOUT: Duration = Duration::from_secs(20);
 
 #[derive(Clone, Default)]
@@ -224,11 +263,20 @@ impl LocalStt {
 }
 
 fn command(app: &AppHandle) -> Result<Command> {
+    let preset = preset()?;
     #[cfg(debug_assertions)]
     let (mut command, default_models) = {
-        let path = crate::worker::resolve_worker_path(app)?;
-        let mut command = Command::new(crate::worker::resolve_python(&path));
-        command.arg("-u").arg(path.with_file_name("local_stt.py"));
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
+        let command = if preset == Preset::Qwen {
+            let path = crate::worker::resolve_worker_path(app)?;
+            let mut command = Command::new(crate::worker::resolve_python(&path));
+            command.arg("-u").arg(path.with_file_name("local_stt.py"));
+            command
+        } else {
+            let executable = root.join("output/whisper-build/Release/wangai-whisper.exe");
+            anyhow::ensure!(executable.is_file(), "Run scripts/setup-whisper.ps1 first");
+            Command::new(executable)
+        };
         (
             command,
             PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../output/models"),
@@ -244,9 +292,7 @@ fn command(app: &AppHandle) -> Result<Command> {
         );
         (Command::new(executable), resources.join("models"))
     };
-    let model_dir = std::env::var_os("WANGAI_LOCAL_STT_MODEL_DIR")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| default_models.join(MODEL_DIRECTORY));
+    let model_dir = default_models.join(preset.file());
     command
         .arg("--model-dir")
         .arg(model_dir)
@@ -261,6 +307,24 @@ fn command(app: &AppHandle) -> Result<Command> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn presets_keep_display_names_and_multilingual_model_files_consistent() {
+        for (value, file, label) in [
+            ("base", "ggml-base-q5_1.bin", "Whisper base"),
+            ("small", "ggml-small-q5_1.bin", "Whisper small"),
+            (
+                "qwen",
+                "sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25",
+                "Qwen3-ASR",
+            ),
+        ] {
+            let preset = Preset::parse(value).unwrap();
+            assert_eq!(preset.file(), file);
+            assert!(preset.label().starts_with(label));
+        }
+        assert!(Preset::parse("base.en").is_err());
+    }
 
     #[test]
     fn pcm_protocol_preserves_both_directions_without_audio_files() {

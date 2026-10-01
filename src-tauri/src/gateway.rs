@@ -67,8 +67,8 @@ impl GatewayClient {
         let status = self.status.lock().unwrap().clone();
         #[cfg(feature = "local-stt")]
         let status = ServiceStatus {
-            incoming_model: crate::local_stt::MODEL.into(),
-            microphone_model: crate::local_stt::MODEL.into(),
+            incoming_model: crate::local_stt::model_name().into(),
+            microphone_model: crate::local_stt::model_name().into(),
             ..status
         };
         status
@@ -263,7 +263,10 @@ mod tests {
         #[cfg(not(feature = "local-stt"))]
         assert_eq!(client.status().incoming_model, "from-server");
         #[cfg(feature = "local-stt")]
-        assert_eq!(client.status().incoming_model, crate::local_stt::MODEL);
+        assert_eq!(
+            client.status().incoming_model,
+            crate::local_stt::model_name()
+        );
         for stream in ["incoming", "microphone"] {
             let _: serde_json::Value = client.transcribe(vec![1, 2, 3, 4], stream).await.unwrap();
             let body = receive.recv().await.unwrap();

@@ -44,12 +44,18 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("wav", nargs="+", type=Path)
     parser.add_argument("--model-dir", type=Path)
+    parser.add_argument("--worker", type=Path, help="Native worker executable (default: Python Qwen)")
+    parser.add_argument("--languages", nargs="+", choices=["en", "th"], help="One language per WAV")
     args = parser.parse_args()
+    languages = args.languages or ["en"] * len(args.wav)
+    if len(languages) != len(args.wav):
+        parser.error("Pass one --languages value per WAV")
     root = Path(__file__).resolve().parents[1]
     model = args.model_dir or root / "output/models/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25"
     started = time.perf_counter()
+    command = [str(args.worker.resolve())] if args.worker else [sys.executable, "-u", str(root / "worker/local_stt.py")]
     process = subprocess.Popen(
-        [sys.executable, "-u", str(root / "worker/local_stt.py"), "--model-dir", str(model)],
+        command + ["--model-dir", str(model)],
         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
         creationflags=(subprocess.CREATE_NO_WINDOW | subprocess.BELOW_NORMAL_PRIORITY_CLASS) if os.name == "nt" else 0,
     )
@@ -65,12 +71,12 @@ def main():
             raise RuntimeError(ready)
         pid = ready["pid"]  # Windows venv python.exe may be only a launcher.
         print(json.dumps({"load_seconds": round(time.perf_counter() - started, 3), "pid": pid}), flush=True)
-        for path in args.wav:
+        for path, language in zip(args.wav, languages):
             with wave.open(str(path), "rb") as audio:
                 assert (audio.getnchannels(), audio.getsampwidth(), audio.getframerate()) == (1, 2, 16000)
                 pcm = audio.readframes(audio.getnframes())
             started = time.perf_counter()
-            process.stdin.write(struct.pack("<I", len(pcm) + 1) + b"\x00" + pcm)
+            process.stdin.write(struct.pack("<I", len(pcm) + 1) + bytes([0 if language == "en" else 1]) + pcm)
             process.stdin.flush()
             result = events.get(timeout=30)
             if "error" in result:

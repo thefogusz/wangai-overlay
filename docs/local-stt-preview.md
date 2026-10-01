@@ -1,5 +1,10 @@
 # WANGAI Local STT + Grok preview
 
+> Updated 2026-10-01: the original launcher retains Qwen. The opt-in native
+> Whisper comparison, current setup commands and measurements are documented in
+> [Whisper preview](whisper-preview.md). The Qwen-only setup/benchmark notes below
+> describe the earlier experiment; use `-Preset qwen` when setting it up again.
+
 Based on upstream `HectorRussia/wangai-overlay` main, commit `67d93ac`.
 
 เสียงเกม / F9 → Silero ตัดวลี → Qwen3-ASR 0.6B INT8 บนเครื่อง → ส่งข้อความไป Grok → Overlay เดิม
@@ -22,10 +27,10 @@ Gateway ทดลอง bind เฉพาะ `127.0.0.1:18080` และ launche
 
 ```powershell
 pnpm install --frozen-lockfile
-powershell -ExecutionPolicy Bypass -File scripts/setup-local-stt.ps1
+powershell -ExecutionPolicy Bypass -File scripts/setup-local-stt.ps1 -Preset qwen
 Copy-Item server/local-stt.env.example server/.env
 # ใส่ TRANSLATION_API_KEY ใน server/.env
-powershell -ExecutionPolicy Bypass -File scripts/start-local-stt.ps1 -Build
+powershell -ExecutionPolicy Bypass -File scripts/start-local-stt.ps1 -Preset qwen -Build
 ```
 
 Setup ดาวน์โหลดโมเดลครั้งเดียว 879 MB ตรวจ SHA-256 ก่อนแตกไฟล์ โมเดลอยู่ใน
