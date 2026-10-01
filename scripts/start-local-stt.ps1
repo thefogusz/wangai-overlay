@@ -30,11 +30,16 @@ try {
     if (Get-NetTCPConnection -LocalPort 18080 -State Listen -ErrorAction SilentlyContinue) {
         throw 'Port 18080 is already in use. Close the previous local preview first.'
     }
-    $GatewayProcess = Start-Process -FilePath $GatewayExe -WorkingDirectory $ServerRoot -WindowStyle Hidden -PassThru
+    New-Item -ItemType Directory -Path $PreviewRoot -Force | Out-Null
+    $GatewayErrorLog = Join-Path $PreviewRoot 'gateway-error.log'
+    $GatewayProcess = Start-Process -FilePath $GatewayExe -WorkingDirectory $ServerRoot -WindowStyle Hidden -RedirectStandardError $GatewayErrorLog -PassThru
     try {
         $Ready = $false
         for ($Attempt = 0; $Attempt -lt 40; $Attempt++) {
-            if ($GatewayProcess.HasExited) { throw 'Gateway stopped. Check server/.env (key and model).' }
+            if ($GatewayProcess.HasExited) {
+                $GatewayError = (Get-Content -LiteralPath $GatewayErrorLog -ErrorAction SilentlyContinue) -join [Environment]::NewLine
+                throw "Gateway stopped. $GatewayError (Log: $GatewayErrorLog)"
+            }
             try {
                 $Status = Invoke-RestMethod 'http://127.0.0.1:18080/v1/status' -TimeoutSec 1
                 if ($Status.translationModel) { $Ready = $true; break }

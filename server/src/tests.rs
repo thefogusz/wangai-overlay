@@ -3,6 +3,17 @@ use axum::{body::Body, http::Request};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 
+#[test]
+fn local_preview_dotenv_preserves_translation_options_json() {
+    let mut values: std::collections::HashMap<String, String> = dotenvy::from_read_iter(
+        std::io::Cursor::new(include_str!("../local-stt.env.example")),
+    ).collect::<Result<_, _>>().unwrap();
+    values.insert("TRANSLATION_API_KEY".into(), "test-only-key".into());
+    let config = Config::load(|key| values.get(key).cloned()).unwrap();
+    assert_eq!(config.translation_options["max_tokens"], 256);
+    assert!(config.local_stt);
+}
+
 #[tokio::test]
 async fn local_stt_gateway_needs_only_translation_credentials_and_rejects_audio() {
     let (url, task, calls) = mock(StatusCode::OK, json!({"choices":[{"message":{"content":"ไปทางซ้าย"}}]})).await;
