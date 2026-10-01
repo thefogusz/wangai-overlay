@@ -109,8 +109,8 @@ GUI/game test was performed for this documentation/test-only handoff change.
   processes. Process ownership/job-object cleanup is future lifecycle work.
 - Dependencies and setup tools must be installed separately; there is no lock for
   every optional Python runtime dependency. Whisper source/model revisions are pinned.
-- Silero still loads PyTorch, and both WebViews stay resident by original design.
-  No RAM optimization or UI lifecycle change was made in this review.
+- Silero runs directly through ONNX Runtime without importing PyTorch. Both
+  WebViews stay resident by original design. See `vad-onnx.md` for measurements.
 
 This review inspected the complete feature diff and its integration points,
 not every unchanged upstream line or a full security/production audit.

@@ -7,7 +7,9 @@ if (-not (Test-Path -LiteralPath $WorkerPython)) {
     & $Python -m venv (Join-Path $ProjectRoot '.venv')
     Check-Exit
 }
-& $WorkerPython -m pip install --extra-index-url https://download.pytorch.org/whl/cpu -r (Join-Path $ProjectRoot 'worker\requirements.txt')
+& $WorkerPython -m pip install -r (Join-Path $ProjectRoot 'worker\requirements.txt')
+Check-Exit
+& $WorkerPython -m pip install --no-deps -r (Join-Path $ProjectRoot 'worker\requirements-model.txt')
 Check-Exit
 if ($Preset -eq 'qwen') {
     & $WorkerPython -m pip install -r (Join-Path $ProjectRoot 'worker\requirements-local-stt.txt')

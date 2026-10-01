@@ -128,10 +128,8 @@ class SileroVad:
         self.silent_samples = 0
 
     def process(self, samples: np.ndarray) -> dict | None:
-        import torch
-
         probability = float(
-            self.model(torch.from_numpy(samples), SAMPLE_RATE).item()
+            self.model(samples, SAMPLE_RATE).item()
         )
         strong_speech = probability >= self.threshold
         if probability >= self.adaptive_floor:
@@ -296,10 +294,13 @@ def run(args) -> int:
         if args.mock:
             incoming_vad = EnergyVad(args.silence_ms)
         else:
-            from silero_vad import load_silero_vad
+            if __package__:
+                from .silero_onnx import SileroOnnx
+            else:
+                from silero_onnx import SileroOnnx
 
             incoming_vad = SileroVad(
-                load_silero_vad(onnx=True),
+                SileroOnnx(),
                 args.vad_threshold,
                 args.silence_ms,
                 args.adaptive_floor,

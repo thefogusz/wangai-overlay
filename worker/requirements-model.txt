@@ -1,0 +1,2 @@
+# Asset-only package: install with --no-deps to avoid PyTorch.
+silero-vad==6.2.3
