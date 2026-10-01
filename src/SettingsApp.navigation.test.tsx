@@ -184,7 +184,8 @@ describe("settings with nullable desktop audio diagnostics", () => {
   it("records a pressed shortcut and prevents duplicates before saving", async () => {
     render(<SettingsApp activeTab="advanced" />);
     const button = screen.getByRole("button", { name: "เปลี่ยนปุ่มลัด เริ่มหรือหยุดฟัง" });
-    fireEvent.click(button);
+    // Flush the async native capture handshake and React effect before keydown.
+    await act(async () => { fireEvent.click(button); });
     expect(await screen.findByText("กดปุ่มที่ต้องการ…")).toBeInTheDocument();
     expect(api.setHotkeyCaptureMode).toHaveBeenCalledWith(true);
     fireEvent.keyDown(window, { key: "F9", code: "F9" });
@@ -201,7 +202,7 @@ describe("settings with nullable desktop audio diagnostics", () => {
     render(<SettingsApp activeTab="advanced" />);
     const copy = screen.getByRole("button", { name: "เปลี่ยนปุ่มลัด คัดลอกคำตอบล่าสุด" });
     expect(copy).toHaveTextContent("F10");
-    fireEvent.click(copy);
+    await act(async () => { fireEvent.click(copy); });
     await screen.findByText("กดปุ่มที่ต้องการ…");
     fireEvent.keyDown(window, { key: "F6", code: "F6" });
     fireEvent.click(screen.getByRole("button", { name: "บันทึกปุ่มลัด" }));
