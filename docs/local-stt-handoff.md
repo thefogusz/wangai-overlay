@@ -84,8 +84,8 @@ cargo test --manifest-path src-tauri/Cargo.toml --lib --no-default-features
 
 Whisper process integration tests require the native binary and base weights.
 They report explicit skips on a fresh checkout/default CI; after base setup,
-verify both native tests actually run. The original CI does not build/test the
-local-STT Cargo feature or package the native backend yet.
+verify both native tests actually run. The 0.6 preview CI tests the local-STT
+Cargo feature; it does not package or benchmark the native backend yet.
 
 ## Review findings / remaining work
 

@@ -1,5 +1,8 @@
 # WANGAI Realtime Translator Overlay
 
+**0.6.0-alpha.1 — รุ่นทดลองรอปรับปรุง:** [สิ่งที่เปลี่ยนและข้อจำกัด](docs/releases/v0.6.0-alpha.1.md)
+เป็น source preview สำหรับพัฒนาต่อ ยังไม่ใช่ตัวติดตั้งพร้อมแจกผู้ใช้ทั่วไป
+
 **Local STT ทดลอง:** [คู่มือส่งต่อสำหรับนักพัฒนา](docs/local-stt-handoff.md)
 มี Qwen/Whisper บน CPU แล้วส่งข้อความให้ gateway แปล เป็น source preview ที่แยกด้วย feature `local-stt`
 
