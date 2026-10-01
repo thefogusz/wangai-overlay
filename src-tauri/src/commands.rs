@@ -600,6 +600,8 @@ pub fn copy_latest_reply(app: AppHandle) -> CommandResult<bool> {
 
 #[tauri::command]
 pub fn restart_worker(app: AppHandle, state: State<'_, AppState>) -> CommandResult<()> {
+    #[cfg(feature = "local-stt")]
+    crate::local_stt::warm_up_in_background(app.clone());
     let settings = state.settings.snapshot();
     state
         .worker

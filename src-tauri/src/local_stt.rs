@@ -11,9 +11,23 @@ use std::{
     },
     time::{Duration, Instant},
 };
-use tauri::AppHandle;
-#[cfg(not(debug_assertions))]
-use tauri::Manager;
+use tauri::{AppHandle, Emitter, Manager};
+
+/// Startup and the existing recovery button use the same readiness/error path.
+pub fn warm_up_in_background(app: AppHandle) {
+    tauri::async_runtime::spawn(async move {
+        let state = app.state::<crate::state::AppState>();
+        let message = match state.local_stt.warm_up(&app).await {
+            Ok(()) => "Local STT พร้อม: ถอดเสียงบนเครื่อง / แปลผ่านบริการ AI".to_string(),
+            Err(error) => {
+                state.update_runtime(|runtime| runtime.last_error = Some(error.to_string()));
+                format!("Local STT ยังไม่พร้อม: {error}")
+            }
+        };
+        let _ = app.emit("pipeline-status", message);
+        let _ = app.emit("runtime-state", state.update_runtime(|_| {}));
+    });
+}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Preset {
@@ -349,6 +363,21 @@ mod tests {
         let worker = Arc::new(Inner::default());
         worker.closing.store(true, Ordering::Release);
         assert!(worker.run(Command::new("missing-worker"), None).is_err());
+    }
+
+    #[test]
+    fn failed_initialization_can_be_retried_without_restarting_desktop() {
+        let temp = tempfile::tempdir().unwrap();
+        let script = temp.path().join("worker.py");
+        std::fs::write(&script, "print('{\"error\":\"model missing\"}', flush=True)\n").unwrap();
+        let inner = Arc::new(Inner::default());
+        assert!(inner.run(fake_command(&script), None).is_err());
+        assert!(!inner.ready.load(Ordering::Acquire));
+        assert!(inner.child.lock().unwrap().is_none());
+        std::fs::write(&script, "import sys\nprint('{\"ready\":true}', flush=True)\nsys.stdin.buffer.read()\n").unwrap();
+        inner.run(fake_command(&script), None).unwrap();
+        assert!(inner.ready.load(Ordering::Acquire));
+        inner.kill().unwrap();
     }
 
     fn fake_command(path: &std::path::Path) -> Command {

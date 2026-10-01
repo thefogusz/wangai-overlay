@@ -30,11 +30,7 @@ pub fn handle_worker_event(app: AppHandle, event: WorkerEvent) {
             });
             let _ = app.emit(
                 "worker-status",
-                WorkerStatusEvent {
-                    state: "ready".into(),
-                    message: runtime.status_message,
-                    model: Some(model),
-                },
+                ready_worker_status(runtime, model),
             );
         }
         WorkerEvent::Status { message } => {
@@ -396,6 +392,29 @@ pub fn start_auto_attach_monitor(app: AppHandle) {
             }
         }
     });
+}
+
+fn ready_worker_status(runtime: crate::models::RuntimeState, model: String) -> WorkerStatusEvent {
+    WorkerStatusEvent {
+        state: if runtime.worker_ready { "ready" } else { "starting" }.into(),
+        message: runtime.status_message,
+        model: Some(model),
+    }
+}
+
+#[cfg(test)]
+mod readiness_tests {
+    use super::*;
+
+    #[test]
+    fn vad_ready_event_respects_combined_worker_readiness() {
+        let temp = tempfile::tempdir().unwrap();
+        let state = AppState::new(temp.path().join("settings.json")).unwrap();
+        let runtime = state.update_runtime(|runtime| runtime.worker_ready = true);
+        let event = ready_worker_status(runtime, "silero-vad".into());
+        assert_eq!(event.state, if cfg!(feature = "local-stt") { "starting" } else { "ready" });
+        assert_eq!(event.model.as_deref(), Some("silero-vad"));
+    }
 }
 
 pub fn inject_demo(app: &AppHandle) {
