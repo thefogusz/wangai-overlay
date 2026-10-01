@@ -1,7 +1,7 @@
 # WANGAI Realtime Translator Overlay
 
-**Local STT + Grok ทดลอง:** [วิธีเปิดและผลทดสอบบนเครื่อง](docs/local-stt-preview.md)
-ถอดเสียงบน CPU ด้วย Qwen3-ASR แล้วส่งเฉพาะข้อความให้ Grok แปล เปิดผ่าน `Start-WANGAI-Local.cmd`
+**Local STT ทดลอง:** [คู่มือส่งต่อสำหรับนักพัฒนา](docs/local-stt-handoff.md)
+มี Qwen/Whisper บน CPU แล้วส่งข้อความให้ gateway แปล เป็น source preview ที่แยกด้วย feature `local-stt`
 
 WANGAI เป็น Windows overlay สำหรับแปลเสียงพูดแบบ realtime ผู้ใช้เลือกแอปที่จะฟังครั้งละหนึ่งโปรแกรม เช่น Mistfall, Discord หรือ Chrome ผ่าน WASAPI Application Loopback โดยไม่ inject DLL และไม่แตะ memory/renderer พร้อม Local Web Companion ที่ควบคุม Desktop engine จาก browser บนเครื่องเดียวกัน
 
